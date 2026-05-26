@@ -61,7 +61,7 @@ inputs:
     default: ""
   risk-score-threshold:
     description: |
-      Fail the job when the computed risk score (100 - overall_score) is
+      Fail the job when the computed risk score (100 - readiness-score) is
       greater than or equal to this number. Range 0-100. Default 0 = disabled
       (never fails on score). Example: 70 means "fail if risk >= 70".
     required: false
@@ -92,11 +92,15 @@ outputs:
   exit-code:
     description: trustabl native exit code (0 clean, 1 findings, 2 error).
     value: ${{ steps.scan.outputs.exit-code }}
-  overall-score:
-    description: Readiness score 0-100 (higher = better).
-    value: ${{ steps.scan.outputs.overall-score }}
+  readiness-score:
+    description: |
+      Readiness score as an integer percent in [0, 100], higher = better.
+      Scaled from trustabl's `overall_score` (a float in [0.0, 1.0]).
+      Bounds enforced by trustabl's scoring formula: max(0, 1 - weighted/saturation).
+    value: ${{ steps.scan.outputs.readiness-score }}
   risk-score:
-    description: Computed risk score = 100 - overall-score.
+    description: |
+      Risk score = 100 - readiness-score. Integer in [0, 100]. Higher = worse.
     value: ${{ steps.scan.outputs.risk-score }}
   max-severity:
     description: Highest severity present in findings (none if no findings).
@@ -215,7 +219,12 @@ runs:
         JSON_FILE="${{ inputs.json-file }}"
         trustabl "${BASE_ARGS[@]}" --format json > "$JSON_FILE" || true
 
-        SCORE=$(jq -r '.overall_score // 100'   "$JSON_FILE")
+        # trustabl's overall_score is a float in [0.0, 1.0] (per scoring.go).
+        # We scale to [0, 100] integers so thresholds and the display are
+        # intuitive ("X / 100"). Default 1.0 when JSON missing = clean scan.
+        RAW_SCORE=$(jq -r '.overall_score // 1' "$JSON_FILE")
+        SCORE=$(awk -v s="$RAW_SCORE" 'BEGIN{ v = s*100; if (v<0) v=0; if (v>100) v=100; printf "%d", v + 0.5 }')
+        RISK=$(( 100 - SCORE ))
         COUNT=$(jq -r '.findings | length // 0' "$JSON_FILE")
         MAX_SEV=$(jq -r '
           [.findings[].severity] as $s
@@ -226,10 +235,9 @@ runs:
             elif any($s[]; .=="low")      then "low"
             else "info" end
         ' "$JSON_FILE")
-        RISK=$(awk -v s="$SCORE" 'BEGIN{ printf "%d", (100 - s) + 0.5 }')
 
         echo "exit-code=$NATIVE_CODE"   >> "$GITHUB_OUTPUT"
-        echo "overall-score=$SCORE"     >> "$GITHUB_OUTPUT"
+        echo "readiness-score=$SCORE"   >> "$GITHUB_OUTPUT"
         echo "risk-score=$RISK"         >> "$GITHUB_OUTPUT"
         echo "max-severity=$MAX_SEV"    >> "$GITHUB_OUTPUT"
         echo "findings-count=$COUNT"    >> "$GITHUB_OUTPUT"
@@ -279,7 +287,7 @@ runs:
         cell "Repository"    "$FG_MAG"                   "$REPO_DISP"
         cell "Branch"        "$FG_CYA"                   "$BR_DISP"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
-        cell "Overall score" "$(score_color "$SCORE")"   "$SCORE"
+        cell "Readiness score" "$(score_color "$SCORE")" "$SCORE / 100"
         cell "Risk score"    "$(risk_color  "$RISK")"    "$RISK / 100"
         cell "Findings"      "$BOLD"                     "$COUNT"
         cell "Max severity"  "$(sev_color   "$MAX_SEV")" "$MAX_SEV"
@@ -314,7 +322,7 @@ runs:
           echo "|---|---|"
           echo "| Repository    | \`$REPO\` |"
           echo "| Branch        | \`$BRANCH\` |"
-          echo "| Overall score | \`$SCORE\` |"
+          echo "| Readiness score | \`$SCORE\` |"
           echo "| Risk score    | \`$RISK\` |"
           echo "| Findings      | \`$COUNT\` |"
           echo "| Max severity  | \`$MAX_SEV\` |"
