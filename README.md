@@ -7,9 +7,12 @@ OpenAI Agents SDK, Google ADK, MCP). The action:
 - Downloads the official `trustabl` release binary (counts toward the
   upstream repo's release download stats).
 - Scans the caller's checkout for tools, agents, subagents, and MCP servers.
-- Emits **SARIF** and uploads it to GitHub Code Scanning.
+- Emits **SARIF** (upload to Code Scanning currently disabled by default —
+  upstream trustabl SARIF is rejected by the Code Scanning schema validator
+  due to a missing `artifactChanges` field on `fixes[]`; opt in with
+  `upload-sarif: true` once that's fixed).
 - Emits the **full JSON `ScanResult`** and uploads it as a downloadable
-  workflow artifact.
+  workflow artifact — this is the primary output for now.
 - Optionally fails the job on a **risk-score** or **severity** threshold.
 - Prints a colored pass/fail line in the log and a result table in the
   run's Step Summary.
@@ -22,7 +25,7 @@ on: [push, pull_request]
 
 permissions:
   contents: read
-  security-events: write  # required when upload-sarif is on (default)
+  security-events: write  # only required when upload-sarif: true
 
 jobs:
   scan:
@@ -59,7 +62,7 @@ flags a medium-or-higher finding.
 | `strict` | `false` | Pass `--strict` to trustabl (fail on any finding). |
 | `rules-ref` | _(default)_ | Pin a `trustabl-rules` git ref. |
 | `rules-repo` | _(default)_ | Override `trustabl-rules` source repo. |
-| `upload-sarif` | `true` | Call `github/codeql-action/upload-sarif`. |
+| `upload-sarif` | `false` | Call `github/codeql-action/upload-sarif@v4`. Default off — trustabl's current SARIF is rejected by Code Scanning (missing `artifactChanges` on `fixes[]`). Flip on once upstream is fixed. |
 | `sarif-file` | `trustabl.sarif` | SARIF output path. |
 | `json-file` | `trustabl.json` | JSON ScanResult output path. |
 | `upload-artifact` | `true` | Upload JSON + SARIF as a workflow artifact. |
