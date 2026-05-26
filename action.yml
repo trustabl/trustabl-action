@@ -1,5 +1,5 @@
 name: Trustabl
-description: Static reliability/safety analyzer for agent-SDK repos. Emits SARIF, uploads to GitHub Code Scanning, and exports the full JSON scan result as a downloadable artifact.
+description: Static reliability/safety scanner for AI agent repos (Claude, OpenAI, Google ADK, MCP). Gates CI on risk + severity.
 author: trustabl
 branding:
   icon: shield
