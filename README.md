@@ -77,8 +77,8 @@ flags a medium-or-higher finding.
 | Name | Description |
 |---|---|
 | `exit-code` | trustabl's native exit code (0 / 1 / 2). |
-| `overall-score` | Readiness score (0-100, higher = better). |
-| `risk-score` | `100 - overall-score`. |
+| `readiness-score` | Integer percent [0, 100], higher = better. Scaled from trustabl's `overall_score` (float [0.0, 1.0]). |
+| `risk-score` | `100 - readiness-score`. Integer [0, 100], higher = worse. |
 | `max-severity` | Highest severity among findings, or `none`. |
 | `findings-count` | Total finding count. |
 | `sarif-file` | Path to the emitted SARIF file. |
