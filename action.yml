@@ -117,19 +117,27 @@ runs:
   steps:
     - id: resolve-branch
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
         BR="${{ inputs.branch }}"
         TARGET="${{ inputs.target }}"
         if [ -z "$BR" ]; then
-          if [ -d "$TARGET/.git" ] || git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1; then
+          # 1) Remote GitHub URL → ask GH API for default_branch.
+          if [[ "$TARGET" =~ ^https?://github\.com/([^/]+/[^/]+?)(\.git)?/?$ ]]; then
+            SLUG="${BASH_REMATCH[1]%.git}"
+            BR=$(gh api "repos/$SLUG" --jq .default_branch 2>/dev/null || true)
+          fi
+          # 2) Local git checkout → prefer main, then master, then HEAD.
+          if [ -z "$BR" ] && { [ -d "$TARGET/.git" ] || git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1; }; then
             if   git -C "$TARGET" show-ref --verify --quiet refs/heads/main;   then BR=main
             elif git -C "$TARGET" show-ref --verify --quiet refs/heads/master; then BR=master
-            else BR=$(git -C "$TARGET" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+            else BR=$(git -C "$TARGET" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
             fi
-          else
-            BR=unknown
           fi
+          # 3) Last resort.
+          [ -z "$BR" ] && BR=unknown
         fi
         echo "branch=$BR" >> "$GITHUB_OUTPUT"
         echo "Trustabl scanning branch: $BR"
