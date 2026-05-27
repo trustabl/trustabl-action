@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: trustabl/actions@v0.1.0
+      - uses: trustabl/actions@v0.1.1
 ```
 
 That's it. With zero config the action scans the checkout, uploads the SARIF
@@ -43,7 +43,7 @@ flags a medium-or-higher finding.
 ## Pinned + gated
 
 ```yaml
-- uses: trustabl/actions@v0.1.0
+- uses: trustabl/actions@v0.1.1
   with:
     version: v0.5.0
     detectors: claude_sdk,openai_sdk
