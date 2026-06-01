@@ -250,57 +250,83 @@ runs:
         echo "max-severity=$MAX_SEV"    >> "$GITHUB_OUTPUT"
         echo "findings-count=$COUNT"    >> "$GITHUB_OUTPUT"
 
+        # ── Projected readiness (estimate — re-applies trustabl's own scoring) ──
+        # Upstream model (scoring.go / models.go): per-tool score = max(0, 1 -
+        # weighted/3); overall = min over tools; per-finding weight =
+        # severityWeight*confidence (crit 1, high .7, med .4, low .15, info .05).
+        # We re-apply that exact formula with selected severities "resolved" to
+        # project headroom. NOT a re-scan: assumes each fixed finding is removed
+        # cleanly and introduces nothing new. P_* are 0-100 ints like SCORE.
+        PROJ_JQ='
+          def sw($s): if $s=="critical" then 1.0 elif $s=="high" then 0.7 elif $s=="medium" then 0.4 elif $s=="low" then 0.15 else 0.05 end;
+          def removed($rm): reduce (.findings[]? | select(.severity as $s | $rm | index($s))) as $f ({}; .[$f.tool_name] = ((.[$f.tool_name] // 0) + (sw($f.severity) * $f.confidence)));
+          def projected($rm): removed($rm) as $r | [ .readiness[]? | (.weighted_severity - (($r[.tool_name]) // 0)) as $w | (if $w<0 then 0 else $w end) as $w2 | (1 - $w2/3.0) as $s | (if $s<0 then 0 else $s end) ] | (if length==0 then 1 else min end);
+          def p100($x): ($x*100 + 0.5 | floor);
+          [ p100(projected(["critical"])), p100(projected(["critical","high"])), p100(projected(["critical","high","medium","low","info"])) ] | @tsv
+        '
+        # tr -d '\r': jq on Windows runners can emit CRLF; a trailing \r would
+        # poison the $(( )) arithmetic on the P_* values below.
+        read P_CRIT P_CH P_ALL < <(jq -r "$PROJ_JQ" "$JSON_FILE" 2>/dev/null | tr -d '\r')
+        : "${P_CRIT:=$SCORE}"; : "${P_CH:=$SCORE}"; : "${P_ALL:=100}"
+        GATE_TOOL=$(jq -r '(.readiness // []) | if length==0 then "" else (min_by(.score).tool_name) end' "$JSON_FILE" 2>/dev/null | tr -d '\r')
+        GATE_PCT=$(jq -r '([.readiness[]?.score] | if length==0 then 1 else min end) * 100 + 0.5 | floor' "$JSON_FILE" 2>/dev/null | tr -d '\r')
+        : "${GATE_PCT:=$SCORE}"
+
         # ── Pretty box-drawn console report ───────────────────────────
         BOLD=$'\e[1m'; DIM=$'\e[2m'; RESET=$'\e[0m'
         FG_RED=$'\e[1;31m'; FG_YEL=$'\e[1;33m'; FG_GRN=$'\e[1;32m'
         FG_BLU=$'\e[1;34m'; FG_CYA=$'\e[1;36m'; FG_MAG=$'\e[1;35m'
 
-        risk_color() { if [ "$1" -ge 70 ] 2>/dev/null; then printf '%s' "$FG_RED"; elif [ "$1" -ge 40 ] 2>/dev/null; then printf '%s' "$FG_YEL"; else printf '%s' "$FG_GRN"; fi; }
         sev_color()  { case "$1" in critical|high) printf '%s' "$FG_RED";; medium) printf '%s' "$FG_YEL";; low) printf '%s' "$FG_BLU";; none) printf '%s' "$FG_GRN";; *) printf '%s' "$DIM";; esac; }
-        score_color() { if awk -v s="$1" 'BEGIN{exit !(s>=70)}'; then printf '%s' "$FG_GRN"; elif awk -v s="$1" 'BEGIN{exit !(s>=40)}'; then printf '%s' "$FG_YEL"; else printf '%s' "$FG_RED"; fi; }
+        score_color() { if [ "$1" -ge 70 ] 2>/dev/null; then printf '%s' "$FG_GRN"; elif [ "$1" -ge 40 ] 2>/dev/null; then printf '%s' "$FG_YEL"; else printf '%s' "$FG_RED"; fi; }
 
-        # Geometry: total width 60. Middle divider at col 20.
-        DASH_TOP=$(printf '─%.0s' {1..58})
-        DASH_L=$(printf '─%.0s'   {1..18})
-        DASH_R=$(printf '─%.0s'   {1..39})
+        # Geometry: total width 60, left label col 16, right value col 37.
+        DASH_TOP=$(printf '─%.0s' {1..58}); DASH_L=$(printf '─%.0s' {1..18}); DASH_R=$(printf '─%.0s' {1..39})
         VAL_W=37
 
-        # Render a row with an ANSI-colored value, padding manually so colors
-        # don't break alignment (escape sequences are zero-width visually but
-        # printf's %s width counts them as chars).
-        cell() {
-          local label="$1" color="$2" val="$3"
-          local len=${#val}
-          local pad=$(( VAL_W - len ))
-          [ $pad -lt 0 ] && pad=0
-          printf '│ %-16s │ %b%s%b%*s │\n' "$label" "$color" "$val" "$RESET" "$pad" ''
-        }
-
-        # ASCII-safe title (no emoji) so ${#TITLE} == display width across
-        # every terminal — emoji codepoints render 2 cells but count as 1 char.
-        TITLE="TRUSTABL SUMMARY REPORT"
-        TLEN=${#TITLE}
-        LP=$(( (58 - TLEN) / 2 ))
-        RP=$(( 58 - TLEN - LP ))
-
+        # Colored cell. Keep VALUES ascii so ${#val} == display width in any
+        # locale (the step never sets LANG; the … from trunc only shows on
+        # overflow). ANSI escapes are width-0 visually but counted by printf, so
+        # we pad manually.
+        cell() { local label="$1" color="$2" val="$3" len=${#3} pad; pad=$(( VAL_W - len )); [ $pad -lt 0 ] && pad=0; printf '│ %-16s │ %b%s%b%*s │\n' "$label" "$color" "$val" "$RESET" "$pad" ''; }
+        # Bar of <w> glyphs: filled (color) + empty (dim). Padding everywhere uses
+        # the known glyph count <w>, never ${#}, so the █/░ multibyte glyphs can
+        # never break alignment regardless of locale.
+        bar() { local v="$1" m="$2" w="$3" c="$4" f; f=$(awk -v v="$v" -v m="$m" -v w="$w" 'BEGIN{if(m<=0)m=1;n=int(v/m*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); printf '%b' "$c"; [ "$f" -gt 0 ] && printf '█%.0s' $(seq 1 "$f"); printf '%b' "$DIM"; [ "$f" -lt "$w" ] && printf '░%.0s' $(seq 1 $((w-f))); printf '%b' "$RESET"; }
+        gauge() { local label="$1" v="$2" w="$3" c="$4" suf="$5" b text vis pad; b=$(bar "$v" 100 "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '│ %-16s │ %b%*s │\n' "$label" "$text$RESET" "$pad" ''; }
+        center() { local t="$1" c="$2" len=${#1} lp rp; lp=$(( (58-len)/2 )); [ $lp -lt 0 ] && lp=0; rp=$(( 58-len-lp )); [ $rp -lt 0 ] && rp=0; printf '%b│%b%*s%b%s%b%*s%b│%b\n' "$FG_CYA" "$RESET" "$lp" '' "$c" "$t" "$RESET" "$rp" '' "$FG_CYA" "$RESET"; }
+        # Markdown emoji bar (10 squares) for the Step Summary; colour by band.
+        md_emoji() { local v="$1" w=10 f e i out=""; f=$(awk -v v="$v" -v w="$w" 'BEGIN{n=int(v/100*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); if [ "$v" -ge 70 ] 2>/dev/null; then e="🟩"; elif [ "$v" -ge 40 ] 2>/dev/null; then e="🟨"; else e="🟥"; fi; for ((i=0;i<f;i++)); do out+="$e"; done; for ((i=f;i<w;i++)); do out+="⬜"; done; printf '%s' "$out"; }
         # Truncate long values so they never overflow the box.
         trunc() { local s="$1" max="$2"; if [ ${#s} -gt "$max" ]; then printf '%s…' "${s:0:$((max-1))}"; else printf '%s' "$s"; fi; }
-        REPO_DISP=$(trunc "$REPO"   "$VAL_W")
-        BR_DISP=$(trunc   "$BRANCH" "$VAL_W")
+
+        # Projection deltas (points). Monotonic: SCORE <= P_CRIT <= P_CH <= P_ALL.
+        D_HEAD=$(( P_CH - SCORE )); D1=$(( P_CRIT - SCORE )); D2=$(( P_CH - P_CRIT )); D3=$(( P_ALL - P_CH ))
+        SUB=$(trunc "$REPO  -  $BRANCH  -  $COUNT findings" 56)
+        if [ -n "$GATE_TOOL" ]; then GATED=$(trunc "$GATE_TOOL ($GATE_PCT/100)" "$VAL_W"); else GATED="n/a (no tool surfaces)"; fi
 
         echo ""
         printf '%b┌%s┐%b\n' "$FG_CYA" "$DASH_TOP" "$RESET"
-        printf '%b│%b%*s%b%s%b%*s%b│%b\n' "$FG_CYA" "$RESET" "$LP" '' "$BOLD" "$TITLE" "$RESET" "$RP" '' "$FG_CYA" "$RESET"
+        center "TRUSTABL SCAN REPORT" "$BOLD"
+        center "$SUB" "$DIM"
         printf '%b├%s┬%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
-        cell "Repository"    "$FG_MAG"                   "$REPO_DISP"
-        cell "Branch"        "$FG_CYA"                   "$BR_DISP"
+        cell "Repository" "$FG_MAG" "$(trunc "$REPO" "$VAL_W")"
+        cell "Branch"     "$FG_CYA" "$(trunc "$BRANCH" "$VAL_W")"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
-        cell "Readiness score" "$(score_color "$SCORE")" "$SCORE / 100"
-        cell "Risk score"    "$(risk_color  "$RISK")"    "$RISK / 100"
-        cell "Findings"      "$BOLD"                     "$COUNT"
-        cell "Max severity"  "$(sev_color   "$MAX_SEV")" "$MAX_SEV"
-        cell "Native exit"   "$([ "$NATIVE_CODE" = "0" ] && printf '%s' "$FG_GRN" || printf '%s' "$FG_RED")" "$NATIVE_CODE"
+        gauge "Readiness now"  "$SCORE" 12 "$(score_color "$SCORE")" "$SCORE/100"
+        gauge "Projected C+H"  "$P_CH"  12 "$(score_color "$P_CH")"  "$P_CH/100  +$D_HEAD"
+        printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        cell "Gated by" "$FG_YEL" "$GATED"
+        printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        cell "Fix critical"   "$DIM" "$SCORE -> $P_CRIT  (+$D1)"
+        cell "Fix crit+high"  "$DIM" "$P_CRIT -> $P_CH  (+$D2)"
+        cell "Fix everything" "$DIM" "$P_CH -> $P_ALL  (+$D3)"
+        printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        cell "Findings"     "$BOLD" "$COUNT"
+        cell "Max severity" "$(sev_color "$MAX_SEV")" "$MAX_SEV"
+        cell "Native exit"  "$([ "$NATIVE_CODE" = "0" ] && printf '%s' "$FG_GRN" || printf '%s' "$FG_RED")" "$NATIVE_CODE"
         printf '%b└%s┴%s┘%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        printf '%b  Projected = estimate from trustabl'\''s own formula; listed fixes resolved, nothing new. Not a re-scan.%b\n' "$DIM" "$RESET"
         echo ""
 
         FAIL=0; REASONS=()
@@ -326,15 +352,36 @@ runs:
         {
           echo "## Trustabl scan"
           echo ""
+          echo "**\`$REPO\` · \`$BRANCH\` · $COUNT findings**"
+          echo ""
+          echo "Readiness now &nbsp; $(md_emoji "$SCORE") &nbsp; \`$SCORE / 100\`"
+          echo ""
+          echo "Projected if **critical + high** resolved &nbsp; $(md_emoji "$P_CH") &nbsp; \`$P_CH / 100\` &nbsp; **+$D_HEAD**"
+          echo ""
+          if [ -n "$GATE_TOOL" ]; then
+            echo "> Readiness is gated by the weakest surface **\`$GATE_TOOL\`** ($GATE_PCT / 100) — fixing other tools won't raise the overall score until this one improves."
+            echo ""
+          fi
+          echo "<details><summary><b>Projected headroom</b> — estimate, not a re-scan</summary>"
+          echo ""
+          echo "| Fix scope | Readiness | Δ |"
+          echo "|---|---|---|"
+          echo "| Fix critical | $SCORE → $P_CRIT | +$D1 |"
+          echo "| Fix critical + high | $P_CRIT → $P_CH | +$D2 |"
+          echo "| Fix everything | $P_CH → $P_ALL | +$D3 |"
+          echo ""
+          echo "_Projected by re-applying trustabl's own scoring with the listed findings resolved (nothing new introduced). Confidence inputs are heuristic — treat as guidance, not a guarantee._"
+          echo "</details>"
+          echo ""
           echo "| Metric | Value |"
           echo "|---|---|"
-          echo "| Repository    | \`$REPO\` |"
-          echo "| Branch        | \`$BRANCH\` |"
+          echo "| Repository | \`$REPO\` |"
+          echo "| Branch | \`$BRANCH\` |"
           echo "| Readiness score | \`$SCORE\` |"
-          echo "| Risk score    | \`$RISK\` |"
-          echo "| Findings      | \`$COUNT\` |"
-          echo "| Max severity  | \`$MAX_SEV\` |"
-          echo "| Native exit   | \`$NATIVE_CODE\` |"
+          echo "| Risk score | \`$RISK\` |"
+          echo "| Findings | \`$COUNT\` |"
+          echo "| Max severity | \`$MAX_SEV\` |"
+          echo "| Native exit | \`$NATIVE_CODE\` |"
           echo ""
         } >> "$SUMMARY"
 

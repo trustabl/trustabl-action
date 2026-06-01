@@ -14,7 +14,9 @@ OpenAI Agents SDK, Google ADK, MCP). The action:
 - Emits the **full JSON `ScanResult`** and uploads it as a downloadable
   workflow artifact — this is the primary output for now.
 - Optionally fails the job on a **risk-score** or **severity** threshold.
-- Prints a colored pass/fail line in the log and a result table in the
+- Prints a colored pass/fail line plus a **score-bar panel** — current
+  readiness vs a **projected** readiness estimate (what it would be if findings
+  are fixed), a fix-headroom ladder, and the gating tool — in the log and the
   run's Step Summary.
 
 ## Quick start
