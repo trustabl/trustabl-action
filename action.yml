@@ -281,28 +281,33 @@ runs:
         score_color() { if [ "$1" -ge 70 ] 2>/dev/null; then printf '%s' "$FG_GRN"; elif [ "$1" -ge 40 ] 2>/dev/null; then printf '%s' "$FG_YEL"; else printf '%s' "$FG_RED"; fi; }
 
         # Geometry: total width 60, left label col 16, right value col 37.
-        DASH_TOP=$(printf '─%.0s' {1..58}); DASH_L=$(printf '─%.0s' {1..18}); DASH_R=$(printf '─%.0s' {1..39})
+        # Frame is ASCII (+ - |): box-drawing glyphs are 3-byte UTF-8 and a long
+        # run of them on the divider lines gets split mid-character by log
+        # viewers that buffer on byte boundaries, surfacing as U+FFFD (�). ASCII
+        # is 1 byte/col so it can't be corrupted that way. Bars stay █/░ (short
+        # runs, interspersed with ASCII).
+        DASH_TOP=$(printf '%.0s-' {1..58}); DASH_L=$(printf '%.0s-' {1..18}); DASH_R=$(printf '%.0s-' {1..39})
         VAL_W=37
 
         # Colored cell. Keep VALUES ascii so ${#val} == display width in any
         # locale (the step never sets LANG; the … from trunc only shows on
         # overflow). ANSI escapes are width-0 visually but counted by printf, so
         # we pad manually.
-        cell() { local label="$1" color="$2" val="$3" len=${#3} pad; pad=$(( VAL_W - len )); [ $pad -lt 0 ] && pad=0; printf '│ %-16s │ %b%s%b%*s │\n' "$label" "$color" "$val" "$RESET" "$pad" ''; }
+        cell() { local label="$1" color="$2" val="$3" len=${#3} pad; pad=$(( VAL_W - len )); [ $pad -lt 0 ] && pad=0; printf '| %-16s | %b%s%b%*s |\n' "$label" "$color" "$val" "$RESET" "$pad" ''; }
         # Bar of <w> glyphs: filled (color) + empty (dim). Padding everywhere uses
         # the known glyph count <w>, never ${#}, so the █/░ multibyte glyphs can
         # never break alignment regardless of locale.
         bar() { local v="$1" m="$2" w="$3" c="$4" f; f=$(awk -v v="$v" -v m="$m" -v w="$w" 'BEGIN{if(m<=0)m=1;n=int(v/m*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); printf '%b' "$c"; [ "$f" -gt 0 ] && printf '█%.0s' $(seq 1 "$f"); printf '%b' "$DIM"; [ "$f" -lt "$w" ] && printf '░%.0s' $(seq 1 $((w-f))); printf '%b' "$RESET"; }
-        gauge() { local label="$1" v="$2" w="$3" c="$4" suf="$5" b text vis pad; b=$(bar "$v" 100 "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '│ %-16s │ %b%*s │\n' "$label" "$text$RESET" "$pad" ''; }
+        gauge() { local label="$1" v="$2" w="$3" c="$4" suf="$5" b text vis pad; b=$(bar "$v" 100 "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '| %-16s | %b%*s |\n' "$label" "$text$RESET" "$pad" ''; }
         # Count gauge: bar scaled to <max> (not 100) for the severity rows.
-        barcell() { local label="$1" v="$2" m="$3" c="$4" suf="$5" b text vis pad w=12; b=$(bar "$v" "$m" "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '│ %-16s │ %b%*s │\n' "$label" "$text$RESET" "$pad" ''; }
-        center() { local t="$1" c="$2" len=${#1} lp rp; lp=$(( (58-len)/2 )); [ $lp -lt 0 ] && lp=0; rp=$(( 58-len-lp )); [ $rp -lt 0 ] && rp=0; printf '%b│%b%*s%b%s%b%*s%b│%b\n' "$FG_CYA" "$RESET" "$lp" '' "$c" "$t" "$RESET" "$rp" '' "$FG_CYA" "$RESET"; }
+        barcell() { local label="$1" v="$2" m="$3" c="$4" suf="$5" b text vis pad w=12; b=$(bar "$v" "$m" "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '| %-16s | %b%*s |\n' "$label" "$text$RESET" "$pad" ''; }
+        center() { local t="$1" c="$2" len=${#1} lp rp; lp=$(( (58-len)/2 )); [ $lp -lt 0 ] && lp=0; rp=$(( 58-len-lp )); [ $rp -lt 0 ] && rp=0; printf '%b|%b%*s%b%s%b%*s%b|%b\n' "$FG_CYA" "$RESET" "$lp" '' "$c" "$t" "$RESET" "$rp" '' "$FG_CYA" "$RESET"; }
         # Markdown emoji bar (10 squares) for the Step Summary; colour by band.
         md_emoji() { local v="$1" w=10 f e i out=""; f=$(awk -v v="$v" -v w="$w" 'BEGIN{n=int(v/100*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); if [ "$v" -ge 70 ] 2>/dev/null; then e="🟩"; elif [ "$v" -ge 40 ] 2>/dev/null; then e="🟨"; else e="🟥"; fi; for ((i=0;i<f;i++)); do out+="$e"; done; for ((i=f;i<w;i++)); do out+="⬜"; done; printf '%s' "$out"; }
         # Markdown count bar (8 cells, neutral) scaled to <max> for severity rows.
         md_count() { local v="$1" m="$2" w=8 f i out=""; f=$(awk -v v="$v" -v m="$m" -v w="$w" 'BEGIN{if(m<=0)m=1;n=int(v/m*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); for ((i=0;i<f;i++)); do out+="▰"; done; for ((i=f;i<w;i++)); do out+="▱"; done; printf '%s' "$out"; }
         # Truncate long values so they never overflow the box.
-        trunc() { local s="$1" max="$2"; if [ ${#s} -gt "$max" ]; then printf '%s…' "${s:0:$((max-1))}"; else printf '%s' "$s"; fi; }
+        trunc() { local s="$1" max="$2"; if [ ${#s} -gt "$max" ]; then printf '%s~' "${s:0:$((max-1))}"; else printf '%s' "$s"; fi; }
 
         # Projection deltas (points). Cumulative severity tiers, non-decreasing.
         D_ALL=$(( P_ALL - SCORE ))
@@ -311,33 +316,33 @@ runs:
         SMAX=1; for n in "$SEV_CRIT" "$SEV_HIGH" "$SEV_MED" "$SEV_LOW" "$SEV_INFO"; do [ "$n" -gt "$SMAX" ] 2>/dev/null && SMAX="$n"; done
 
         echo ""
-        printf '%b┌%s┐%b\n' "$FG_CYA" "$DASH_TOP" "$RESET"
+        printf '%b+%s+%b\n' "$FG_CYA" "$DASH_TOP" "$RESET"
         center "TRUSTABL SCAN REPORT" "$BOLD"
         center "$SUB" "$DIM"
         center "Readiness  $SCORE -> $P_ALL  (+$D_ALL)" "$BOLD"
-        printf '%b├%s┬%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        printf '%b+%s+%s+%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         cell "Repository" "$FG_MAG" "$(trunc "$REPO" "$VAL_W")"
         cell "Branch"     "$FG_CYA" "$(trunc "$BRANCH" "$VAL_W")"
-        printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        printf '%b+%s+%s+%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         gauge "Readiness now"  "$SCORE" 12 "$(score_color "$SCORE")" "$SCORE/100"
         gauge "Projected all"  "$P_ALL" 12 "$(score_color "$P_ALL")" "$P_ALL/100  +$D_ALL"
-        printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        printf '%b+%s+%s+%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         barcell "critical" "$SEV_CRIT" "$SMAX" "$(sev_color critical)" "$SEV_CRIT"
         barcell "high"     "$SEV_HIGH" "$SMAX" "$(sev_color high)"     "$SEV_HIGH"
         barcell "medium"   "$SEV_MED"  "$SMAX" "$(sev_color medium)"   "$SEV_MED"
         barcell "low"      "$SEV_LOW"  "$SMAX" "$(sev_color low)"      "$SEV_LOW"
         barcell "info"     "$SEV_INFO" "$SMAX" "$(sev_color info)"     "$SEV_INFO"
-        printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        printf '%b+%s+%s+%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         cell "Fix critical" "$DIM" "$SCORE -> $P_CRIT  (+$L1)"
         cell "Fix +high"    "$DIM" "$P_CRIT -> $P_CH  (+$L2)"
         cell "Fix +medium"  "$DIM" "$P_CH -> $P_CHM  (+$L3)"
         cell "Fix +low"     "$DIM" "$P_CHM -> $P_CHML  (+$L4)"
         cell "Fix +info"    "$DIM" "$P_CHML -> $P_ALL  (+$L5)"
-        printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        printf '%b+%s+%s+%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         cell "Findings"     "$BOLD" "$COUNT"
         cell "Max severity" "$(sev_color "$MAX_SEV")" "$MAX_SEV"
         cell "Native exit"  "$([ "$NATIVE_CODE" = "0" ] && printf '%s' "$FG_GRN" || printf '%s' "$FG_RED")" "$NATIVE_CODE"
-        printf '%b└%s┴%s┘%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
+        printf '%b+%s+%s+%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         printf '%b  Projected = estimate from trustabl'\''s own formula; listed fixes resolved, nothing new. Not a re-scan.%b\n' "$DIM" "$RESET"
         echo ""
 
