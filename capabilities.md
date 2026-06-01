@@ -15,5 +15,6 @@
   fix-headroom ladder.
 - **Step outputs for downstream** — `readiness-score`, `risk-score`,
   `max-severity`, `findings-count`, `exit-code`, plus file/artifact paths.
-- **Zero-config** — minimum call is `uses: trustabl/actions@v0.2.0` after
+- **Zero-config** — minimum call is `uses: trustabl/actions@v0.1.2` after
   `actions/checkout`; every input has a sensible default.
+

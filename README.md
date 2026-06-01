@@ -34,18 +34,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: trustabl/actions@v0.1.1
+      - uses: trustabl/actions@v0.1.2
 ```
 
-That's it. With zero config the action scans the checkout, uploads the SARIF
-to Code Scanning, attaches `trustabl.json` + `trustabl.sarif` as an artifact
-named `trustabl-scan-results`, and only fails the job if `trustabl` itself
-flags a medium-or-higher finding.
+That's it. With zero config the action scans the checkout, attaches
+`trustabl.json` + `trustabl.sarif` as an artifact named `trustabl-scan-results`,
+and only fails the job if `trustabl` itself flags a medium-or-higher finding.
+SARIF upload to Code Scanning is opt-in — set `upload-sarif: true` (and add
+`security-events: write` to `permissions`).
+
+## Annotated example
+
+Every line explained, with the most useful optional inputs commented out:
+
+```yaml
+name: Trustabl                  # Workflow name shown in the Actions tab.
+
+on:                             # Triggers — when the scan runs.
+  push:
+    branches: [main]            # Post-merge gate on main.
+  pull_request:                 # Catch issues on PRs before merge.
+  workflow_dispatch:            # Adds a manual "Run workflow" button.
+
+permissions:
+  contents: read                # Read-only checkout is all that's needed.
+                                # Add `security-events: write` ONLY if upload-sarif: true.
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest      # Also works on macos-* / windows-*.
+    steps:
+      - uses: actions/checkout@v4       # REQUIRED first — the action scans your checkout; it won't clone for you.
+      - uses: trustabl/actions@v0.1.2   # Pin to a release tag (reproducible); avoid @main.
+        with:                           # Every input is optional — omit `with:` entirely for zero-config.
+          detectors: openai_sdk         # Limit SDKs: claude_sdk,openai_sdk,google_adk. Omit = scan all.
+          # target: .                   # Path or GitHub URL to scan. Default: "." (the checkout).
+          # version: latest             # trustabl release to download. Pin e.g. v0.5.0 for reproducible CI.
+          # severity-threshold: high    # Fail if any finding >= level (none|low|medium|high|critical). Default: none.
+          # risk-score-threshold: 70    # Fail if risk (100 - readiness) >= N (1-100). 0 = disabled (default).
+          # strict: false               # Pass --strict to trustabl (fail on any finding). Default: false.
+          # upload-sarif: false         # Upload SARIF to Code Scanning (needs security-events: write). Default: false.
+          # upload-artifact: true       # Attach trustabl.json + trustabl.sarif as a run artifact. Default: true.
+```
 
 ## Pinned + gated
 
 ```yaml
-- uses: trustabl/actions@v0.1.1
+- uses: trustabl/actions@v0.1.2
   with:
     version: v0.5.0
     detectors: claude_sdk,openai_sdk

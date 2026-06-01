@@ -5,6 +5,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.1.2] — 2026-06-01
+
+### Added
+
+- **Readiness score-bar panel.** The console box and the Step Summary now lead
+  with bar gauges: current readiness vs a **projected** readiness — what the
+  score would be if findings are resolved — computed from the single scan with
+  **no second run**. The projection re-applies trustabl's own scoring
+  (per-finding `severityWeight × confidence`, per-tool `max(0, 1 − weighted/3)`,
+  overall = `min` across tools), so the number matches what a real re-scan
+  would produce.
+- **Per-severity breakdown.** Finding counts for `critical / high / medium /
+  low / info`, each with a bar scaled to the largest bucket and tinted by
+  severity.
+- **Projected headroom ladder.** A cumulative per-severity projection —
+  fix critical → +high → +medium → +low → +info — each row showing
+  `before → after (+Δ)`, so you can see which severity tier actually unlocks
+  the score.
+
+### Changed
+
+- Console box and Step Summary restyled around the score bars and the ladder.
+  The raw metric table (repository, branch, readiness, risk, findings,
+  max-severity, native exit) is retained below the panel.
+- The console box frame is now ASCII (`+ - |`) instead of Unicode box-drawing.
+  Long runs of 3-byte box glyphs on the divider lines were being split
+  mid-character by log viewers that buffer on byte boundaries, surfacing as
+  U+FFFD (�); ASCII is 1 byte/column and immune. Row separators are colored to
+  match the frame.
+
+### Fixed
+
+- **CRLF in jq output on Windows runners.** Projection values read from `jq`
+  are stripped of `\r`, so a trailing carriage return can no longer break the
+  `$(( ))` arithmetic on Windows.
+
+### Notes
+
+- Projected scores are an **estimate**, not a re-scan: each resolved finding is
+  assumed removed cleanly with nothing new introduced, and trustabl's
+  confidence inputs are heuristic — treat the numbers as guidance. "Projected
+  all" is the ceiling (≈100 whenever any findings exist); the ladder and the
+  severity breakdown carry the actionable detail.
+
 ## [0.1.1] — 2026-05-27
 
 ### Fixed
@@ -106,5 +150,6 @@ and gates the pipeline on readiness, risk, or severity thresholds.
   need `gh`, `jq`, `curl`, `tar` (and `unzip` on Windows) available on
   PATH.
 
+[0.1.2]: https://github.com/trustabl/actions/releases/tag/v0.1.2
 [0.1.1]: https://github.com/trustabl/actions/releases/tag/v0.1.1
 [0.1.0]: https://github.com/trustabl/actions/releases/tag/v0.1.0
