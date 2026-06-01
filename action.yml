@@ -276,6 +276,7 @@ runs:
         BOLD=$'\e[1m'; DIM=$'\e[2m'; RESET=$'\e[0m'
         FG_RED=$'\e[1;31m'; FG_YEL=$'\e[1;33m'; FG_GRN=$'\e[1;32m'
         FG_BLU=$'\e[1;34m'; FG_CYA=$'\e[1;36m'; FG_MAG=$'\e[1;35m'
+        VB="$FG_CYA|$RESET"   # cyan vertical border, so data-row separators match the frame
 
         sev_color()  { case "$1" in critical|high) printf '%s' "$FG_RED";; medium) printf '%s' "$FG_YEL";; low) printf '%s' "$FG_BLU";; none) printf '%s' "$FG_GRN";; *) printf '%s' "$DIM";; esac; }
         score_color() { if [ "$1" -ge 70 ] 2>/dev/null; then printf '%s' "$FG_GRN"; elif [ "$1" -ge 40 ] 2>/dev/null; then printf '%s' "$FG_YEL"; else printf '%s' "$FG_RED"; fi; }
@@ -293,14 +294,14 @@ runs:
         # locale (the step never sets LANG; the … from trunc only shows on
         # overflow). ANSI escapes are width-0 visually but counted by printf, so
         # we pad manually.
-        cell() { local label="$1" color="$2" val="$3" len=${#3} pad; pad=$(( VAL_W - len )); [ $pad -lt 0 ] && pad=0; printf '| %-16s | %b%s%b%*s |\n' "$label" "$color" "$val" "$RESET" "$pad" ''; }
+        cell() { local label="$1" color="$2" val="$3" len=${#3} pad; pad=$(( VAL_W - len )); [ $pad -lt 0 ] && pad=0; printf '%s %-16s %s %b%s%b%*s %s\n' "$VB" "$label" "$VB" "$color" "$val" "$RESET" "$pad" '' "$VB"; }
         # Bar of <w> glyphs: filled (color) + empty (dim). Padding everywhere uses
         # the known glyph count <w>, never ${#}, so the █/░ multibyte glyphs can
         # never break alignment regardless of locale.
         bar() { local v="$1" m="$2" w="$3" c="$4" f; f=$(awk -v v="$v" -v m="$m" -v w="$w" 'BEGIN{if(m<=0)m=1;n=int(v/m*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); printf '%b' "$c"; [ "$f" -gt 0 ] && printf '█%.0s' $(seq 1 "$f"); printf '%b' "$DIM"; [ "$f" -lt "$w" ] && printf '░%.0s' $(seq 1 $((w-f))); printf '%b' "$RESET"; }
-        gauge() { local label="$1" v="$2" w="$3" c="$4" suf="$5" b text vis pad; b=$(bar "$v" 100 "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '| %-16s | %b%*s |\n' "$label" "$text$RESET" "$pad" ''; }
+        gauge() { local label="$1" v="$2" w="$3" c="$4" suf="$5" b text vis pad; b=$(bar "$v" 100 "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '%s %-16s %s %b%*s %s\n' "$VB" "$label" "$VB" "$text$RESET" "$pad" '' "$VB"; }
         # Count gauge: bar scaled to <max> (not 100) for the severity rows.
-        barcell() { local label="$1" v="$2" m="$3" c="$4" suf="$5" b text vis pad w=12; b=$(bar "$v" "$m" "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '| %-16s | %b%*s |\n' "$label" "$text$RESET" "$pad" ''; }
+        barcell() { local label="$1" v="$2" m="$3" c="$4" suf="$5" b text vis pad w=12; b=$(bar "$v" "$m" "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '%s %-16s %s %b%*s %s\n' "$VB" "$label" "$VB" "$text$RESET" "$pad" '' "$VB"; }
         center() { local t="$1" c="$2" len=${#1} lp rp; lp=$(( (58-len)/2 )); [ $lp -lt 0 ] && lp=0; rp=$(( 58-len-lp )); [ $rp -lt 0 ] && rp=0; printf '%b|%b%*s%b%s%b%*s%b|%b\n' "$FG_CYA" "$RESET" "$lp" '' "$c" "$t" "$RESET" "$rp" '' "$FG_CYA" "$RESET"; }
         # Markdown emoji bar (10 squares) for the Step Summary; colour by band.
         md_emoji() { local v="$1" w=10 f e i out=""; f=$(awk -v v="$v" -v w="$w" 'BEGIN{n=int(v/100*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); if [ "$v" -ge 70 ] 2>/dev/null; then e="🟩"; elif [ "$v" -ge 40 ] 2>/dev/null; then e="🟨"; else e="🟥"; fi; for ((i=0;i<f;i++)); do out+="$e"; done; for ((i=f;i<w;i++)); do out+="⬜"; done; printf '%s' "$out"; }
