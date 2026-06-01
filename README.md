@@ -16,8 +16,8 @@ OpenAI Agents SDK, Google ADK, MCP). The action:
 - Optionally fails the job on a **risk-score** or **severity** threshold.
 - Prints a colored pass/fail line plus a **score-bar panel** — current
   readiness vs a **projected** readiness estimate (what it would be if findings
-  are fixed), a fix-headroom ladder, and the gating tool — in the log and the
-  run's Step Summary.
+  are fixed), a **per-severity breakdown** (critical/high/medium/low/info
+  counts), and a fix-headroom ladder — in the log and the run's Step Summary.
 
 ## Quick start
 

@@ -268,9 +268,9 @@ runs:
         # poison the $(( )) arithmetic on the P_* values below.
         read P_CRIT P_CH P_ALL < <(jq -r "$PROJ_JQ" "$JSON_FILE" 2>/dev/null | tr -d '\r')
         : "${P_CRIT:=$SCORE}"; : "${P_CH:=$SCORE}"; : "${P_ALL:=100}"
-        GATE_TOOL=$(jq -r '(.readiness // []) | if length==0 then "" else (min_by(.score).tool_name) end' "$JSON_FILE" 2>/dev/null | tr -d '\r')
-        GATE_PCT=$(jq -r '([.readiness[]?.score] | if length==0 then 1 else min end) * 100 + 0.5 | floor' "$JSON_FILE" 2>/dev/null | tr -d '\r')
-        : "${GATE_PCT:=$SCORE}"
+        # Per-severity finding counts for the breakdown rows.
+        read SEV_CRIT SEV_HIGH SEV_MED SEV_LOW SEV_INFO < <(jq -r '[.findings[]?.severity] as $s | "\([$s[]|select(.=="critical")]|length)\t\([$s[]|select(.=="high")]|length)\t\([$s[]|select(.=="medium")]|length)\t\([$s[]|select(.=="low")]|length)\t\([$s[]|select(.=="info")]|length)"' "$JSON_FILE" 2>/dev/null | tr -d '\r')
+        : "${SEV_CRIT:=0}"; : "${SEV_HIGH:=0}"; : "${SEV_MED:=0}"; : "${SEV_LOW:=0}"; : "${SEV_INFO:=0}"
 
         # ── Pretty box-drawn console report ───────────────────────────
         BOLD=$'\e[1m'; DIM=$'\e[2m'; RESET=$'\e[0m'
@@ -294,16 +294,20 @@ runs:
         # never break alignment regardless of locale.
         bar() { local v="$1" m="$2" w="$3" c="$4" f; f=$(awk -v v="$v" -v m="$m" -v w="$w" 'BEGIN{if(m<=0)m=1;n=int(v/m*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); printf '%b' "$c"; [ "$f" -gt 0 ] && printf '█%.0s' $(seq 1 "$f"); printf '%b' "$DIM"; [ "$f" -lt "$w" ] && printf '░%.0s' $(seq 1 $((w-f))); printf '%b' "$RESET"; }
         gauge() { local label="$1" v="$2" w="$3" c="$4" suf="$5" b text vis pad; b=$(bar "$v" 100 "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '│ %-16s │ %b%*s │\n' "$label" "$text$RESET" "$pad" ''; }
+        # Count gauge: bar scaled to <max> (not 100) for the severity rows.
+        barcell() { local label="$1" v="$2" m="$3" c="$4" suf="$5" b text vis pad w=12; b=$(bar "$v" "$m" "$w" "$c"); text="$b $suf"; vis=$(( w + 1 + ${#suf} )); pad=$(( VAL_W - vis )); [ $pad -lt 0 ] && pad=0; printf '│ %-16s │ %b%*s │\n' "$label" "$text$RESET" "$pad" ''; }
         center() { local t="$1" c="$2" len=${#1} lp rp; lp=$(( (58-len)/2 )); [ $lp -lt 0 ] && lp=0; rp=$(( 58-len-lp )); [ $rp -lt 0 ] && rp=0; printf '%b│%b%*s%b%s%b%*s%b│%b\n' "$FG_CYA" "$RESET" "$lp" '' "$c" "$t" "$RESET" "$rp" '' "$FG_CYA" "$RESET"; }
         # Markdown emoji bar (10 squares) for the Step Summary; colour by band.
         md_emoji() { local v="$1" w=10 f e i out=""; f=$(awk -v v="$v" -v w="$w" 'BEGIN{n=int(v/100*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); if [ "$v" -ge 70 ] 2>/dev/null; then e="🟩"; elif [ "$v" -ge 40 ] 2>/dev/null; then e="🟨"; else e="🟥"; fi; for ((i=0;i<f;i++)); do out+="$e"; done; for ((i=f;i<w;i++)); do out+="⬜"; done; printf '%s' "$out"; }
+        # Markdown count bar (8 cells, neutral) scaled to <max> for severity rows.
+        md_count() { local v="$1" m="$2" w=8 f i out=""; f=$(awk -v v="$v" -v m="$m" -v w="$w" 'BEGIN{if(m<=0)m=1;n=int(v/m*w+0.5);if(n>w)n=w;if(n<0)n=0;print n}'); for ((i=0;i<f;i++)); do out+="▰"; done; for ((i=f;i<w;i++)); do out+="▱"; done; printf '%s' "$out"; }
         # Truncate long values so they never overflow the box.
         trunc() { local s="$1" max="$2"; if [ ${#s} -gt "$max" ]; then printf '%s…' "${s:0:$((max-1))}"; else printf '%s' "$s"; fi; }
 
         # Projection deltas (points). Monotonic: SCORE <= P_CRIT <= P_CH <= P_ALL.
         D_HEAD=$(( P_CH - SCORE )); D1=$(( P_CRIT - SCORE )); D2=$(( P_CH - P_CRIT )); D3=$(( P_ALL - P_CH ))
         SUB=$(trunc "$REPO  -  $BRANCH  -  $COUNT findings" 56)
-        if [ -n "$GATE_TOOL" ]; then GATED=$(trunc "$GATE_TOOL ($GATE_PCT/100)" "$VAL_W"); else GATED="n/a (no tool surfaces)"; fi
+        SMAX=1; for n in "$SEV_CRIT" "$SEV_HIGH" "$SEV_MED" "$SEV_LOW" "$SEV_INFO"; do [ "$n" -gt "$SMAX" ] 2>/dev/null && SMAX="$n"; done
 
         echo ""
         printf '%b┌%s┐%b\n' "$FG_CYA" "$DASH_TOP" "$RESET"
@@ -316,7 +320,11 @@ runs:
         gauge "Readiness now"  "$SCORE" 12 "$(score_color "$SCORE")" "$SCORE/100"
         gauge "Projected C+H"  "$P_CH"  12 "$(score_color "$P_CH")"  "$P_CH/100  +$D_HEAD"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
-        cell "Gated by" "$FG_YEL" "$GATED"
+        barcell "critical" "$SEV_CRIT" "$SMAX" "$(sev_color critical)" "$SEV_CRIT"
+        barcell "high"     "$SEV_HIGH" "$SMAX" "$(sev_color high)"     "$SEV_HIGH"
+        barcell "medium"   "$SEV_MED"  "$SMAX" "$(sev_color medium)"   "$SEV_MED"
+        barcell "low"      "$SEV_LOW"  "$SMAX" "$(sev_color low)"      "$SEV_LOW"
+        barcell "info"     "$SEV_INFO" "$SMAX" "$(sev_color info)"     "$SEV_INFO"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         cell "Fix critical"   "$DIM" "$SCORE -> $P_CRIT  (+$D1)"
         cell "Fix crit+high"  "$DIM" "$P_CRIT -> $P_CH  (+$D2)"
@@ -358,10 +366,16 @@ runs:
           echo ""
           echo "Projected if **critical + high** resolved &nbsp; $(md_emoji "$P_CH") &nbsp; \`$P_CH / 100\` &nbsp; **+$D_HEAD**"
           echo ""
-          if [ -n "$GATE_TOOL" ]; then
-            echo "> Readiness is gated by the weakest surface **\`$GATE_TOOL\`** ($GATE_PCT / 100) — fixing other tools won't raise the overall score until this one improves."
-            echo ""
-          fi
+          echo "### Findings by severity"
+          echo ""
+          echo "| Severity | Count | |"
+          echo "|---|---|---|"
+          echo "| critical | $SEV_CRIT | $(md_count "$SEV_CRIT" "$SMAX") |"
+          echo "| high | $SEV_HIGH | $(md_count "$SEV_HIGH" "$SMAX") |"
+          echo "| medium | $SEV_MED | $(md_count "$SEV_MED" "$SMAX") |"
+          echo "| low | $SEV_LOW | $(md_count "$SEV_LOW" "$SMAX") |"
+          echo "| info | $SEV_INFO | $(md_count "$SEV_INFO" "$SMAX") |"
+          echo ""
           echo "<details><summary><b>Projected headroom</b> — estimate, not a re-scan</summary>"
           echo ""
           echo "| Fix scope | Readiness | Δ |"
