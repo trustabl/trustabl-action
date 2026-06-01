@@ -26,7 +26,7 @@ jobs:
       - name: Echo outputs
         run: |
           echo "exit-code      = ${{ steps.trustabl.outputs.exit-code }}"
-          echo "overall-score  = ${{ steps.trustabl.outputs.overall-score }}"
+          echo "readiness-score = ${{ steps.trustabl.outputs.readiness-score }}"
           echo "risk-score     = ${{ steps.trustabl.outputs.risk-score }}"
           echo "max-severity   = ${{ steps.trustabl.outputs.max-severity }}"
           echo "findings-count = ${{ steps.trustabl.outputs.findings-count }}"
