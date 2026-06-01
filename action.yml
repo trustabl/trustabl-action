@@ -262,12 +262,12 @@ runs:
           def removed($rm): reduce (.findings[]? | select(.severity as $s | $rm | index($s))) as $f ({}; .[$f.tool_name] = ((.[$f.tool_name] // 0) + (sw($f.severity) * $f.confidence)));
           def projected($rm): removed($rm) as $r | [ .readiness[]? | (.weighted_severity - (($r[.tool_name]) // 0)) as $w | (if $w<0 then 0 else $w end) as $w2 | (1 - $w2/3.0) as $s | (if $s<0 then 0 else $s end) ] | (if length==0 then 1 else min end);
           def p100($x): ($x*100 + 0.5 | floor);
-          [ p100(projected(["critical"])), p100(projected(["critical","high"])), p100(projected(["critical","high","medium","low","info"])) ] | @tsv
+          [ p100(projected(["critical"])), p100(projected(["critical","high"])), p100(projected(["critical","high","medium"])), p100(projected(["critical","high","medium","low"])), p100(projected(["critical","high","medium","low","info"])) ] | @tsv
         '
         # tr -d '\r': jq on Windows runners can emit CRLF; a trailing \r would
         # poison the $(( )) arithmetic on the P_* values below.
-        read P_CRIT P_CH P_ALL < <(jq -r "$PROJ_JQ" "$JSON_FILE" 2>/dev/null | tr -d '\r')
-        : "${P_CRIT:=$SCORE}"; : "${P_CH:=$SCORE}"; : "${P_ALL:=100}"
+        read P_CRIT P_CH P_CHM P_CHML P_ALL < <(jq -r "$PROJ_JQ" "$JSON_FILE" 2>/dev/null | tr -d '\r')
+        : "${P_CRIT:=$SCORE}"; : "${P_CH:=$SCORE}"; : "${P_CHM:=$SCORE}"; : "${P_CHML:=$SCORE}"; : "${P_ALL:=100}"
         # Per-severity finding counts for the breakdown rows.
         read SEV_CRIT SEV_HIGH SEV_MED SEV_LOW SEV_INFO < <(jq -r '[.findings[]?.severity] as $s | "\([$s[]|select(.=="critical")]|length)\t\([$s[]|select(.=="high")]|length)\t\([$s[]|select(.=="medium")]|length)\t\([$s[]|select(.=="low")]|length)\t\([$s[]|select(.=="info")]|length)"' "$JSON_FILE" 2>/dev/null | tr -d '\r')
         : "${SEV_CRIT:=0}"; : "${SEV_HIGH:=0}"; : "${SEV_MED:=0}"; : "${SEV_LOW:=0}"; : "${SEV_INFO:=0}"
@@ -304,8 +304,9 @@ runs:
         # Truncate long values so they never overflow the box.
         trunc() { local s="$1" max="$2"; if [ ${#s} -gt "$max" ]; then printf '%s…' "${s:0:$((max-1))}"; else printf '%s' "$s"; fi; }
 
-        # Projection deltas (points). Monotonic: SCORE <= P_CRIT <= P_CH <= P_ALL.
-        D_HEAD=$(( P_CH - SCORE )); D1=$(( P_CRIT - SCORE )); D2=$(( P_CH - P_CRIT )); D3=$(( P_ALL - P_CH ))
+        # Projection deltas (points). Cumulative severity tiers, non-decreasing.
+        D_ALL=$(( P_ALL - SCORE ))
+        L1=$(( P_CRIT - SCORE )); L2=$(( P_CH - P_CRIT )); L3=$(( P_CHM - P_CH )); L4=$(( P_CHML - P_CHM )); L5=$(( P_ALL - P_CHML ))
         SUB=$(trunc "$REPO  -  $BRANCH  -  $COUNT findings" 56)
         SMAX=1; for n in "$SEV_CRIT" "$SEV_HIGH" "$SEV_MED" "$SEV_LOW" "$SEV_INFO"; do [ "$n" -gt "$SMAX" ] 2>/dev/null && SMAX="$n"; done
 
@@ -318,7 +319,7 @@ runs:
         cell "Branch"     "$FG_CYA" "$(trunc "$BRANCH" "$VAL_W")"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         gauge "Readiness now"  "$SCORE" 12 "$(score_color "$SCORE")" "$SCORE/100"
-        gauge "Projected C+H"  "$P_CH"  12 "$(score_color "$P_CH")"  "$P_CH/100  +$D_HEAD"
+        gauge "Projected all"  "$P_ALL" 12 "$(score_color "$P_ALL")" "$P_ALL/100  +$D_ALL"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         barcell "critical" "$SEV_CRIT" "$SMAX" "$(sev_color critical)" "$SEV_CRIT"
         barcell "high"     "$SEV_HIGH" "$SMAX" "$(sev_color high)"     "$SEV_HIGH"
@@ -326,9 +327,11 @@ runs:
         barcell "low"      "$SEV_LOW"  "$SMAX" "$(sev_color low)"      "$SEV_LOW"
         barcell "info"     "$SEV_INFO" "$SMAX" "$(sev_color info)"     "$SEV_INFO"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
-        cell "Fix critical"   "$DIM" "$SCORE -> $P_CRIT  (+$D1)"
-        cell "Fix crit+high"  "$DIM" "$P_CRIT -> $P_CH  (+$D2)"
-        cell "Fix everything" "$DIM" "$P_CH -> $P_ALL  (+$D3)"
+        cell "Fix critical" "$DIM" "$SCORE -> $P_CRIT  (+$L1)"
+        cell "Fix +high"    "$DIM" "$P_CRIT -> $P_CH  (+$L2)"
+        cell "Fix +medium"  "$DIM" "$P_CH -> $P_CHM  (+$L3)"
+        cell "Fix +low"     "$DIM" "$P_CHM -> $P_CHML  (+$L4)"
+        cell "Fix +info"    "$DIM" "$P_CHML -> $P_ALL  (+$L5)"
         printf '%b├%s┼%s┤%b\n' "$FG_CYA" "$DASH_L" "$DASH_R" "$RESET"
         cell "Findings"     "$BOLD" "$COUNT"
         cell "Max severity" "$(sev_color "$MAX_SEV")" "$MAX_SEV"
@@ -364,7 +367,7 @@ runs:
           echo ""
           echo "Readiness now &nbsp; $(md_emoji "$SCORE") &nbsp; \`$SCORE / 100\`"
           echo ""
-          echo "Projected if **critical + high** resolved &nbsp; $(md_emoji "$P_CH") &nbsp; \`$P_CH / 100\` &nbsp; **+$D_HEAD**"
+          echo "Projected if **all findings** resolved &nbsp; $(md_emoji "$P_ALL") &nbsp; \`$P_ALL / 100\` &nbsp; **+$D_ALL**"
           echo ""
           echo "### Findings by severity"
           echo ""
@@ -380,9 +383,11 @@ runs:
           echo ""
           echo "| Fix scope | Readiness | Δ |"
           echo "|---|---|---|"
-          echo "| Fix critical | $SCORE → $P_CRIT | +$D1 |"
-          echo "| Fix critical + high | $P_CRIT → $P_CH | +$D2 |"
-          echo "| Fix everything | $P_CH → $P_ALL | +$D3 |"
+          echo "| Fix critical | $SCORE → $P_CRIT | +$L1 |"
+          echo "| + high | $P_CRIT → $P_CH | +$L2 |"
+          echo "| + medium | $P_CH → $P_CHM | +$L3 |"
+          echo "| + low | $P_CHM → $P_CHML | +$L4 |"
+          echo "| + info (all) | $P_CHML → $P_ALL | +$L5 |"
           echo ""
           echo "_Projected by re-applying trustabl's own scoring with the listed findings resolved (nothing new introduced). Confidence inputs are heuristic — treat as guidance, not a guarantee._"
           echo "</details>"
