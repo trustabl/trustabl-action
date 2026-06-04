@@ -15,7 +15,6 @@ export interface RunContext {
   prNumber?: number;
   prHeadRef?: string;
   isPullRequest: boolean;
-  isFork: boolean;
 }
 
 export function getRunContext(): RunContext {
@@ -23,17 +22,11 @@ export function getRunContext(): RunContext {
   const isPullRequest =
     ctx.eventName === 'pull_request' || ctx.eventName === 'pull_request_target';
   // payload.pull_request is loosely typed (index signature); read defensively.
-  const pr = ctx.payload.pull_request as
-    | { number?: number; head?: any; base?: any }
-    | undefined;
+  const pr = ctx.payload.pull_request as { number?: number; head?: any } | undefined;
 
-  let isFork = false;
   let prHeadRef: string | undefined;
   if (isPullRequest && pr) {
     prHeadRef = pr.head?.ref;
-    const headRepo: string | undefined = pr.head?.repo?.full_name;
-    const baseRepo: string | undefined = pr.base?.repo?.full_name;
-    isFork = Boolean(headRepo && baseRepo && headRepo !== baseRepo);
   }
 
   return {
@@ -45,6 +38,5 @@ export function getRunContext(): RunContext {
     prNumber: pr?.number,
     prHeadRef,
     isPullRequest,
-    isFork,
   };
 }
