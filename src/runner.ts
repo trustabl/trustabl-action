@@ -20,12 +20,28 @@ function baseArgs(inputs: Inputs): string[] {
   return args;
 }
 
+// stderrTail returns the last ~20 lines of a run's stderr, prefixed for context,
+// so a failure surfaces the engine's actual error (e.g. an incompatible rules
+// pack) instead of a generic message.
+function stderrTail(r: ProcResult): string {
+  const s = r.kind === 'exit' || r.kind === 'timeout' ? r.stderr.trim() : '';
+  if (!s) return '';
+  return `\n--- trustabl stderr ---\n${s.split('\n').slice(-20).join('\n')}`;
+}
+
 // exitCodeOf returns the native exit code, or throws for timeout/spawn failures
 // (which are operator errors, not scan verdicts).
 function exitCodeOf(r: ProcResult, what: string): number {
   if (r.kind === 'exit') return r.code;
-  if (r.kind === 'timeout') throw new Error(`trustabl ${what} timed out`);
+  if (r.kind === 'timeout') throw new Error(`trustabl ${what} timed out${stderrTail(r)}`);
   throw new Error(`trustabl ${what} failed to start: ${r.error}`);
+}
+
+// noJsonError builds the "no JSON" failure with the engine's exit code and
+// stderr, turning an opaque failure into an actionable one.
+function noJsonError(r: ProcResult): Error {
+  const code = r.kind === 'exit' ? ` (exit ${r.code})` : '';
+  return new Error(`trustabl scan produced no JSON output${code}${stderrTail(r)}`);
 }
 
 function readFileOrNull(p: string): string | null {
@@ -59,7 +75,7 @@ export async function runScan(
     const r = await runProcess(binPath, args, { cwd, timeoutMs });
     const nativeExit = exitCodeOf(r, 'scan');
     const json = readFileOrNull(inputs.jsonFile) ?? (r.kind === 'exit' ? r.stdout : '');
-    if (!json) throw new Error('trustabl scan produced no JSON output');
+    if (!json) throw noJsonError(r);
     return { result: parseScanResult(json), nativeExit };
   }
 
@@ -69,7 +85,7 @@ export async function runScan(
   const jsonRun = await runProcess(binPath, [...baseArgs(inputs), '--format', 'json'], { cwd, timeoutMs });
   const nativeExit = exitCodeOf(jsonRun, 'scan');
   if (jsonRun.kind !== 'exit' || !jsonRun.stdout) {
-    throw new Error('trustabl scan produced no JSON output');
+    throw noJsonError(jsonRun);
   }
   fs.writeFileSync(inputs.jsonFile, jsonRun.stdout);
 
