@@ -65,14 +65,16 @@ export interface ScanResult {
 // engine that adds fields will not break the action. projected_scores is carried
 // through only when the engine emitted a complete object (all five tiers numeric).
 export function parseScanResult(stdout: string): ScanResult {
-  const data = JSON.parse(stdout) as Partial<ScanResult>;
-  if (!Array.isArray(data.findings)) {
-    throw new Error('invalid ScanResult: missing findings array');
+  const data = JSON.parse(stdout) as Partial<ScanResult> | null;
+  if (data === null || typeof data !== 'object') {
+    throw new Error('invalid ScanResult: expected a JSON object');
   }
   return {
     scan_id: data.scan_id ?? '',
     repo: data.repo ?? '',
-    findings: data.findings,
+    // The engine marshals an empty (nil) findings slice as JSON `null`, not `[]`,
+    // so a clean scan emits `findings: null`. Treat null/absent as no findings.
+    findings: Array.isArray(data.findings) ? data.findings : [],
     surfaces: Array.isArray(data.surfaces) ? data.surfaces : [],
     overall_score: data.overall_score ?? 0,
     projected_scores: validProjected(data.projected_scores),

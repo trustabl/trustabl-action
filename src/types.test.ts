@@ -13,8 +13,15 @@ describe('parseScanResult', () => {
     expect(r.projected_scores).toBeUndefined();
   });
 
-  it('throws when findings is missing', () => {
-    expect(() => parseScanResult('{}')).toThrow(/missing findings/);
+  it('treats null/absent findings as an empty array (clean scan → Go nil slice → null)', () => {
+    expect(parseScanResult('{}').findings).toEqual([]);
+    const nullFindings = JSON.stringify({ ...JSON.parse(minimal), findings: null });
+    expect(parseScanResult(nullFindings).findings).toEqual([]);
+  });
+
+  it('throws on non-object JSON', () => {
+    expect(() => parseScanResult('42')).toThrow(/expected a JSON object/);
+    expect(() => parseScanResult('"nope"')).toThrow(/expected a JSON object/);
   });
 
   it('keeps a complete projected_scores object', () => {
