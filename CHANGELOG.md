@@ -5,6 +5,58 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.2.0] — 2026-06-04
+
+A full rewrite from the bash composite action to a **node20 TypeScript action**,
+adding native pull-request surfaces plus correctness and security fixes.
+
+### Added
+
+- **Inline PR annotations + GitHub Security tab.** SARIF is uploaded to Code
+  Scanning via the API, so findings appear on the changed lines in the PR diff
+  and in the Security tab. `upload-sarif` now defaults to **true** (requires
+  `permissions: security-events: write`). Unblocked by the upstream SARIF fix:
+  the per-result `fixes[]` (which lacked the `artifactChanges` the Code Scanning
+  validator requires) was removed; the suggested fix is carried at the rule level.
+- **Sticky PR summary comment** with the readiness score, finding counts, and
+  headroom ladder — updated in place on each run (`comment-on-pr`, default true;
+  requires `permissions: pull-requests: write`).
+- **Inline annotations** for the most severe findings (`annotations`,
+  `max-annotations`) — also the fallback when Code Scanning is unavailable.
+- New inputs: `comment-on-pr`, `annotations`, `max-annotations`, `github-token`.
+  New output: `sarif-uploaded`.
+
+### Changed
+
+- **Now a node20 TypeScript action** (`runs.using: node20`), bundled to
+  `dist/index.js`. All inputs and the eight existing outputs are preserved.
+- **Single scan.** When the engine supports `--json-out` / `--sarif-out`, both
+  artifacts come from one analysis pass (the v1 action scanned twice). Older
+  engines fall back to the two-scan path automatically.
+- **Headroom ladder is now sourced from the engine** (`projected_scores` in the
+  JSON) — the single source of truth — replacing the in-action jq
+  reimplementation, which read the wrong field and used `min` instead of the real
+  weighted mean (so it silently always showed 100). Hidden on engines that don't
+  emit it.
+
+### Fixed
+
+- **Threshold gates no longer fail open.** A failed/empty scan now errors instead
+  of silently scoring a clean 100 and passing the risk/severity gates.
+- **Binary integrity is verified.** The downloaded release is checked against the
+  release `checksums.txt` (sha256) before execution — the v1 action ran it
+  unverified.
+- **No shell-injection surface.** Inputs are read via the toolkit, never spliced
+  into a `run:` block through `${{ }}`.
+
+### Migration
+
+- Grant the new permissions as needed: `security-events: write` (Security tab),
+  `pull-requests: write` (sticky comment). Without them the action degrades to
+  annotations + Step Summary and warns; it does not fail.
+- Pin `@v0.2.0`, or use the moving `@v0` tag to stay current.
+
+
 ## [0.1.2] — 2026-06-01
 
 ### Added
