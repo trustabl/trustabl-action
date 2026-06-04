@@ -164,7 +164,7 @@ and gates the pipeline on readiness, risk, or severity thresholds.
   `findings-count`, `exit-code`, `sarif-file`, `json-file`,
   `artifact-name` for downstream steps.
 - **Zero-config defaults** — minimum call is
-  `uses: trustabl/actions@v0.1.0` after `actions/checkout`. Every input has a
+  `uses: trustabl/trustabl-action@v0.1.0` after `actions/checkout`. Every input has a
   sensible default.
 - **`.gitignore`** — excludes Claude / agent tooling artifacts
   (`CLAUDE.md`, `.claude/`, `.anthropic/`) and local scan outputs
@@ -202,6 +202,7 @@ and gates the pipeline on readiness, risk, or severity thresholds.
   need `gh`, `jq`, `curl`, `tar` (and `unzip` on Windows) available on
   PATH.
 
-[0.1.2]: https://github.com/trustabl/actions/releases/tag/v0.1.2
-[0.1.1]: https://github.com/trustabl/actions/releases/tag/v0.1.1
-[0.1.0]: https://github.com/trustabl/actions/releases/tag/v0.1.0
+[0.2.0]: https://github.com/trustabl/trustabl-action/releases/tag/v0.2.0
+[0.1.2]: https://github.com/trustabl/trustabl-action/releases/tag/v0.1.2
+[0.1.1]: https://github.com/trustabl/trustabl-action/releases/tag/v0.1.1
+[0.1.0]: https://github.com/trustabl/trustabl-action/releases/tag/v0.1.0
