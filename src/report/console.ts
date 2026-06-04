@@ -55,7 +55,7 @@ export function buildConsoleLines(d: ReportData): string[] {
   L.push(row(`Max severity: ${d.maxSeverity}    Native exit: ${d.nativeExit}`));
   L.push(rule());
   if (d.projected) {
-    L.push("Projected = estimate from trustabl's own scoring; listed fixes resolved, nothing new. Not a re-scan.");
+    L.push('Projected = estimate (listed fixes resolved), not a re-scan.');
   }
   return L;
 }

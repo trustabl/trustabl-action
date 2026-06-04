@@ -1,4 +1,18 @@
-import { repoLabel, refToBranch, resolveBranch } from './git';
+import { repoLabel, refToBranch, resolveBranch, isRemoteTarget } from './git';
+
+describe('isRemoteTarget', () => {
+  it('detects http(s) URLs (trimmed)', () => {
+    expect(isRemoteTarget('https://github.com/o/r')).toBe(true);
+    expect(isRemoteTarget('http://example.com/x')).toBe(true);
+    expect(isRemoteTarget('  https://github.com/o/r  ')).toBe(true);
+  });
+  it('treats local paths and empty as not remote', () => {
+    expect(isRemoteTarget('.')).toBe(false);
+    expect(isRemoteTarget('./sub/dir')).toBe(false);
+    expect(isRemoteTarget('/abs/path')).toBe(false);
+    expect(isRemoteTarget('')).toBe(false);
+  });
+});
 
 describe('repoLabel', () => {
   it('extracts owner/repo from a GitHub URL, stripping .git and trailing slash', () => {

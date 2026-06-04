@@ -10,7 +10,7 @@ import { resolveTrustabl } from './install';
 import { runScan } from './runner';
 import { readiness, risk, maxSeverity, severityCounts, projectedReadiness } from './score';
 import { evaluateGate } from './gate';
-import { repoLabel, resolveBranch } from './git';
+import { repoLabel, resolveBranch, isRemoteTarget } from './git';
 import { ReportData } from './report/model';
 import { renderConsole } from './report/console';
 import { buildSummaryMarkdown, writeStepSummary } from './report/summary';
@@ -90,13 +90,23 @@ async function run(): Promise<void> {
     emitAnnotations(result.findings, inputs.maxAnnotations);
   }
 
+  // A remote URL target scans a different repo than this checkout, so the
+  // caller-repo-scoped surfaces (Code Scanning upload, PR comment) would
+  // misattribute results to this repo — skip them.
+  const remoteTarget = isRemoteTarget(inputs.target);
+
   // Surface 1b: SARIF → Security tab (needs security-events: write).
-  if (inputs.uploadSarif) {
+  if (inputs.uploadSarif && !remoteTarget) {
     const res = await uploadSarif(inputs.githubToken, ctx, inputs.sarifFile);
     core.setOutput('sarif-uploaded', String(res.uploaded));
     if (res.uploaded) core.info('Uploaded SARIF to Code Scanning.');
     else if (res.reason) core.warning(res.reason);
   } else {
+    if (inputs.uploadSarif && remoteTarget) {
+      core.info(
+        'Skipping Code Scanning upload: remote target — SARIF paths/commit do not match this repository.',
+      );
+    }
     core.setOutput('sarif-uploaded', 'false');
   }
 
@@ -106,8 +116,9 @@ async function run(): Promise<void> {
     await uploadResults(inputs.artifactName, [inputs.jsonFile, inputs.sarifFile], days);
   }
 
-  // Surface 2: sticky PR comment (needs pull-requests: write; pull_request only).
-  if (inputs.commentOnPr && ctx.isPullRequest) {
+  // Surface 2: sticky PR comment (needs pull-requests: write; pull_request only;
+  // skipped for a remote target — the comment would describe a different repo).
+  if (inputs.commentOnPr && ctx.isPullRequest && !remoteTarget) {
     await upsertComment(inputs.githubToken, ctx, md);
   }
 

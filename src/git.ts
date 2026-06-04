@@ -4,6 +4,14 @@
 
 const GH_URL = /^https?:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/?$/;
 
+// isRemoteTarget reports whether the scan target is a remote URL rather than the
+// local checkout. Caller-repo-scoped surfaces (Code Scanning SARIF upload, the PR
+// comment) must be skipped for a remote target — their paths/commit/PR refer to
+// THIS repo, not the scanned one, so they'd misattribute results.
+export function isRemoteTarget(target: string): boolean {
+  return /^https?:\/\//i.test(target.trim());
+}
+
 // repoLabel resolves the human-facing repo label for the report. A GitHub URL
 // target wins; otherwise the workflow's owner/repo; otherwise the raw target.
 export function repoLabel(target: string, ownerRepo: string): string {
