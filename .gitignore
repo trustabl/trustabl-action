@@ -4,6 +4,14 @@ CLAUDE.md
 .claude-*/
 .anthropic/
 
+# Node / TypeScript
+node_modules/
+coverage/
+*.tsbuildinfo
+# NOTE: dist/ is intentionally NOT ignored. A node20 action runs dist/index.js
+# directly from the consumer's checkout of the release tag, so the bundled
+# output must be committed. The build-check workflow guards it against drift.
+
 # Local scan artifacts
 *.sarif
 trustabl.json

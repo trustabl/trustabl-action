@@ -2,13 +2,21 @@ name: Selftest
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches: [main, master]
 
 permissions:
   contents: read
-  # security-events only needed if upload-sarif is flipped to true on a job below
-  security-events: write
+  security-events: write # SARIF → Code Scanning (upload-sarif default true)
+  pull-requests: write # sticky PR comment on the pull_request job
+
+# TEMPORARY PIN — remove once an engine release with `mcp`-category support is the
+# `latest` release. The released engine v0.1.2 predates the `mcp` rule category
+# that trustabl-rules now ships, so `latest` engine + latest rules fails to load
+# ("unknown category mcp"). Every selftest job is pinned to v0.1.2 + the `pre-mcp`
+# rules tag (a known-compatible pair) so CI exercises the ACTION, not the upstream
+# engine↔rules drift. Engine fix: trustabl/trustabl#12.
 
 jobs:
   scan-remote-target:
@@ -17,26 +25,54 @@ jobs:
       - uses: actions/checkout@v4
       - id: trustabl
         uses: ./
+        # The external target has medium+ findings, so the action exits non-zero
+        # (gating on findings, by design). This job validates plumbing only, so
+        # don't let that fail the check — the assertions below catch real breakage.
+        continue-on-error: true
         with:
           target: "https://github.com/openai/openai-agents-python"
-          # Don't fail the selftest on findings — we only want to validate
-          # the action's plumbing, not gate on a target we don't control.
+          version: "v0.1.2" # pinned — see note above
+          rules-ref: "pre-mcp" # pinned — see note above
           severity-threshold: "none"
           risk-score-threshold: "0"
-      - name: Echo outputs
+          comment-on-pr: "false" # remote target; nothing to comment about on this PR
+      - name: Assert outputs + artifacts
         run: |
-          echo "exit-code      = ${{ steps.trustabl.outputs.exit-code }}"
+          echo "exit-code       = ${{ steps.trustabl.outputs.exit-code }}"
           echo "readiness-score = ${{ steps.trustabl.outputs.readiness-score }}"
-          echo "risk-score     = ${{ steps.trustabl.outputs.risk-score }}"
-          echo "max-severity   = ${{ steps.trustabl.outputs.max-severity }}"
-          echo "findings-count = ${{ steps.trustabl.outputs.findings-count }}"
-          ls -la trustabl.sarif trustabl.json
+          echo "risk-score      = ${{ steps.trustabl.outputs.risk-score }}"
+          echo "max-severity    = ${{ steps.trustabl.outputs.max-severity }}"
+          echo "findings-count  = ${{ steps.trustabl.outputs.findings-count }}"
+          echo "sarif-uploaded  = ${{ steps.trustabl.outputs.sarif-uploaded }}"
+          # Real plumbing check: the scan must have produced both artifacts and a
+          # numeric readiness score. If the action actually broke (no JSON), these fail.
+          test -f trustabl.sarif && test -f trustabl.json
+          test -n "${{ steps.trustabl.outputs.readiness-score }}"
+          test -n "${{ steps.trustabl.outputs.findings-count }}"
 
   scan-self-empty:
-    # Sanity: scanning this repo (no agent SDK code) should be a clean pass.
+    # Sanity: scanning this repo (no agent SDK code) should be a clean pass (exit 0).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./
         with:
           target: "."
+          version: "v0.1.2"
+          rules-ref: "pre-mcp"
+          comment-on-pr: "false"
+
+  scan-pr-surfaces:
+    # On pull_request, exercise the PR-only surfaces end to end (inline
+    # annotations, sticky comment, gating) against this repo's checkout (clean).
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          target: "."
+          version: "v0.1.2"
+          rules-ref: "pre-mcp"
+          severity-threshold: "none" # plumbing check only; don't gate the selftest PR
+          risk-score-threshold: "0"

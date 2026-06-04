@@ -1,0 +1,34 @@
+name: Build check
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # A node20 action runs dist/index.js straight from the consumer's checkout,
+      # so a stale committed bundle ships stale code. Fail if the freshly built
+      # dist/ differs from what's committed.
+      - name: Verify dist/ is up to date
+        run: |
+          if [ -n "$(git status --porcelain dist/)" ]; then
+            echo "::error::dist/ is out of date — run 'npm run build' and commit dist/."
+            git --no-pager diff -- dist/ | head -100
+            exit 1
+          fi
+          echo "dist/ is up to date."
