@@ -19,7 +19,7 @@ inputs:
     required: false
     default: latest
   detectors:
-    description: Comma-separated SDK detectors (claude_sdk,openai_sdk,google_adk,openshell). Empty = all.
+    description: Comma-separated SDK detectors (claude_sdk,openai_sdk,google_adk,openshell,mcp,langchain,crewai,pydantic_ai,vercel_ai,autogen). Empty = all.
     required: false
     default: ""
   strict:

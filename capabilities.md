@@ -1,8 +1,9 @@
 ### Trustabl Action — capabilities
 
-- **Static reliability/safety scan** for agent-SDK repos (Claude Agent SDK,
-  OpenAI Agents SDK, Google ADK, MCP) — runs the upstream `trustabl` binary over
-  your checkout, no daemon or hosted service.
+- **Static reliability/safety scan** for agent repos (Claude Agent SDK, OpenAI
+  Agents SDK, Google ADK, LangChain, CrewAI, Pydantic AI, Vercel AI, AutoGen, MCP
+  servers, and Claude subagents & skills) — runs the upstream `trustabl` binary
+  over your checkout, no daemon or hosted service.
 - **Optional dependency CVE scan** (`vuln-scan: true`) — matches declared
   dependencies against a pinned OSV snapshot and reports known CVEs as findings,
   so they ride every surface (score, gate, annotations, Security tab) alongside a

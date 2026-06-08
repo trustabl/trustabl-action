@@ -15,6 +15,13 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the bundled `dist/` is identical; the build CI and the `engines` field bump to
   Node 24 to match the runtime.
 
+### Docs
+
+- README + capabilities now document the full SDK coverage (LangChain, CrewAI,
+  Pydantic AI, Vercel AI, AutoGen, MCP servers, and Claude subagents & skills),
+  the opt-in dependency CVE scan, and the complete `detectors` token list; install
+  pins bumped to `v0.3.1`.
+
 
 ## [0.3.0] — 2026-06-09
 
