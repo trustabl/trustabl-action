@@ -25,6 +25,14 @@ export async function runEnrich(
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
   }
 
+  if (inputs.enrichModel) {
+    try {
+      await exec.exec(binPath, ['llm', 'model', 'set', inputs.enrichModel]);
+    } catch (e) {
+      core.warning(`Enrich: failed to set model "${inputs.enrichModel}", using default: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   const args = [
     'enrich',
     '--input', inputs.jsonFile,

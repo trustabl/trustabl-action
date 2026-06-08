@@ -30,6 +30,7 @@ export interface Inputs {
   autoFix: boolean;
   createFixPr: boolean;
   fixPrBase: string;
+  enrichModel: string;
   enrichRules: string[];
 }
 
@@ -90,6 +91,7 @@ export function readInputs(): Inputs {
     autoFix: core.getBooleanInput('auto-fix'),
     createFixPr: core.getBooleanInput('create-fix-pr'),
     fixPrBase: core.getInput('fix-pr-base'),
+    enrichModel: core.getInput('enrich-model'),
     enrichRules: core.getInput('enrich-rules').split(',').map((r) => r.trim()).filter(Boolean),
 
   };

@@ -124,6 +124,10 @@ inputs:
     description: Open a PR with applied fixes. Requires auto-fix true.
     required: false
     default: "false"
+  enrich-model:
+    description: Claude model to use for enrichment (e.g. claude-sonnet-4-6). Defaults to the trustabl binary default (claude-haiku-4-5).
+    required: false
+    default: ""
   enrich-rules:
     description: Comma-separated rule IDs to enrich (e.g. ADK-201,ADK-105). Empty = all findings.
     required: false
