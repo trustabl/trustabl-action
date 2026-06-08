@@ -5,8 +5,9 @@
 # Trustabl Action
 
 A GitHub Action that runs [trustabl](https://github.com/trustabl/trustabl) — the
-static reliability/safety analyzer for agent-SDK repos (Claude Agent SDK, OpenAI
-Agents SDK, Google ADK, MCP) — and surfaces the results where you work:
+static reliability/safety analyzer for agent repos (Claude Agent SDK, OpenAI
+Agents SDK, Google ADK, LangChain, CrewAI, Pydantic AI, Vercel AI, AutoGen, MCP
+servers, and Claude subagents & skills) — and surfaces the results where you work:
 
 - **Inline PR annotations + the Security tab.** Findings are uploaded to GitHub
   Code Scanning, so they appear on the changed lines in the PR diff and in the
@@ -89,7 +90,7 @@ jobs:
 ## Pinned + gated
 
 ```yaml
-- uses: trustabl/trustabl-action@v0.3.0
+- uses: trustabl/trustabl-action@v0.3.1
   with:
     version: v0.5.0
     detectors: claude_sdk,openai_sdk
@@ -104,7 +105,7 @@ jobs:
 |---|---|---|
 | `target` | `.` | Path or GitHub URL to scan. |
 | `version` | `latest` | trustabl release tag (e.g. `v0.5.0`) or `latest`. |
-| `detectors` | _(all)_ | Comma-separated subset: `claude_sdk,openai_sdk,google_adk,openshell`. |
+| `detectors` | _(all)_ | Comma-separated SDK subset: `claude_sdk`, `openai_sdk`, `google_adk`, `openshell`, `mcp`, `langchain`, `crewai`, `pydantic_ai`, `vercel_ai`, `autogen`. |
 | `strict` | `false` | Pass `--strict` (fail on any finding). |
 | `vuln-scan` | `false` | Match dependencies against a pinned OSV snapshot; report known CVEs as findings. |
 | `rules-ref` | _(default)_ | Pin a `trustabl-rules` git ref. |
@@ -146,6 +147,11 @@ jobs:
   one analysis pass produces both artifacts. Older engines fall back to two scans
   automatically (and the headroom ladder is hidden, since it needs the engine's
   `projected_scores`). Use `version: latest` to get the fast path.
+- **Dependency CVE scan (opt-in).** With `vuln-scan: true`, declared dependencies
+  are matched against a pinned OSV snapshot; each known CVE becomes a finding (so
+  it counts toward the score, gate, annotations, and Security tab), plus a
+  dependencies-scanned / known-vulnerabilities line in every report. The OSV
+  database is fetched once on first use, then cached.
 - **Honest gating.** A failed or empty scan errors the job rather than reporting a
   clean score. The gate decision is exit-code/threshold-based, surfaced in the
   Step Summary and the PR comment.
@@ -165,7 +171,7 @@ After a run, open the run page and find the **`trustabl-scan-results`** artifact
 
 ## Versioning
 
-- Pin a release: `uses: trustabl/trustabl-action@v0.3.0`.
+- Pin a release: `uses: trustabl/trustabl-action@v0.3.1`.
 - Or track the line: `uses: trustabl/trustabl-action@v0` (the moving major tag).
 
 ## Notes
@@ -178,7 +184,7 @@ After a run, open the run page and find the **`trustabl-scan-results`** artifact
 
 ## Development
 
-This is a node20 TypeScript action bundled to `dist/` with
+This is a node24 TypeScript action bundled to `dist/` with
 [`ncc`](https://github.com/vercel/ncc).
 
 ```bash
@@ -189,7 +195,7 @@ npm run build       # bundle to dist/index.js (commit the result)
 npm run all         # all of the above
 ```
 
-`dist/` is committed because a node20 action runs `dist/index.js` directly from
+`dist/` is committed because a node24 action runs `dist/index.js` directly from
 the consumer's checkout of the release tag. The **Build check** workflow fails a
 PR whose `dist/` is stale, so always `npm run build` and commit after changing
 `src/`.

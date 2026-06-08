@@ -1,6 +1,6 @@
 {
   "name": "trustabl-action",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Static reliability/safety scanner for AI agent repos (Claude, OpenAI, Google ADK, MCP) — GitHub Action.",
   "main": "dist/index.js",
@@ -12,7 +12,7 @@
   },
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "@actions/artifact": "^2.1.11",

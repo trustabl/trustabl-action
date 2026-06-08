@@ -19,7 +19,7 @@ inputs:
     required: false
     default: latest
   detectors:
-    description: Comma-separated SDK detectors (claude_sdk,openai_sdk,google_adk,openshell). Empty = all.
+    description: Comma-separated SDK detectors (claude_sdk,openai_sdk,google_adk,openshell,mcp,langchain,crewai,pydantic_ai,vercel_ai,autogen). Empty = all.
     required: false
     default: ""
   strict:
@@ -136,5 +136,5 @@ outputs:
     description: Whether the SARIF was accepted by Code Scanning (true/false).
 
 runs:
-  using: node20
+  using: node24
   main: dist/index.js
