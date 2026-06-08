@@ -18,6 +18,7 @@ import { emitAnnotations } from './report/annotations';
 import { uploadSarif } from './surfaces/sarif';
 import { uploadResults } from './surfaces/artifact';
 import { upsertComment } from './surfaces/comment';
+import { runEnrich } from './surfaces/enrich';
 
 const SCAN_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -120,6 +121,17 @@ async function run(): Promise<void> {
   // skipped for a remote target — the comment would describe a different repo).
   if (inputs.commentOnPr && ctx.isPullRequest && !remoteTarget) {
     await upsertComment(inputs.githubToken, ctx, md);
+  }
+
+  // Surface 5: enrich → auto-fix → fix PR (best-effort, never fails the job).
+  if (inputs.enrich && !remoteTarget) {
+    const er = await runEnrich(installed.binPath, inputs, ctx);
+    core.setOutput('enrich-json-file', er.enrichedJsonFile);
+    core.setOutput('fix-pr-url', er.fixPrUrl ?? '');
+    if (er.fixPrUrl) core.info(`Fix PR opened: ${er.fixPrUrl}`);
+  } else {
+    core.setOutput('enrich-json-file', '');
+    core.setOutput('fix-pr-url', '');
   }
 
   // Surface 3: status-check gating — the job status is the check.

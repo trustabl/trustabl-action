@@ -90,6 +90,36 @@ jobs:
     artifact-retention-days: "30"
 ```
 
+## Enrich + auto-fix
+
+When `enrich: true`, after the scan the action calls `trustabl enrich` with your
+Anthropic API key to generate AI explanations and code fixes for each finding.
+With `auto-fix: true`, high-confidence fixes are applied directly to source
+files. With `create-fix-pr: true`, the patches are committed on a new branch
+and a pull request is opened for human review.
+
+```yaml
+permissions:
+  contents: write        # push fix branch
+  pull-requests: write   # open fix PR
+  security-events: write
+  
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: trustabl/trustabl-action@v0
+        with:
+          enrich: true
+          anthropic-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          auto-fix: true
+          create-fix-pr: true
+```
+
+Enrich is best-effort — if it fails the scan result and gate decision are
+unaffected and a warning is emitted instead of failing the job.
+
 ## Inputs
 
 | Name | Default | Description |
@@ -113,6 +143,11 @@ jobs:
 | `severity-threshold` | `none` | Fail when any finding `>= severity` (`none`/`low`/`medium`/`high`/`critical`). |
 | `branch` | _(auto)_ | Report branch label; auto-detected from the checkout. |
 | `github-token` | `${{ github.token }}` | Token for release lookup, SARIF upload, and PR comments. |
+| `enrich` | `false` | Run AI enrichment on findings (explanations + fixes). Requires `anthropic-key`. |
+| `anthropic-key` | _(none)_ | Anthropic API key for enrichment (BYOK). Required when `enrich` is true. |
+| `auto-fix` | `false` | Apply high-confidence fixes to source files. Requires `enrich: true`. |
+| `create-fix-pr` | `false` | Open a PR with applied fixes. Requires `auto-fix: true`. Needs `contents: write` + `pull-requests: write`. |
+| `fix-pr-base` | _(current branch)_ | Base branch for the fix PR. |
 
 ## Outputs
 
@@ -127,6 +162,8 @@ jobs:
 | `sarif-file` | Path to the emitted SARIF file. |
 | `json-file` | Path to the emitted JSON file. |
 | `artifact-name` | Artifact name used for the upload. |
+| `enrich-json-file` | Path to `enriched.json` (when `enrich` is true). |
+| `fix-pr-url` | URL of the opened fix PR (when `create-fix-pr` is true). |
 
 ## How it works
 

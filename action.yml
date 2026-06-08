@@ -107,6 +107,29 @@ inputs:
     required: false
     default: ${{ github.token }}
 
+  # ── enrich ──────────────────────────────────────────────────────────────
+  enrich:
+    description: Run AI enrichment on findings (explanations + fixes). Requires anthropic-key.
+    required: false
+    default: "false"
+  anthropic-key:
+    description: Anthropic API key for enrichment (BYOK). Required when enrich is true.
+    required: false
+    default: ""
+  auto-fix:
+    description: Apply high-confidence fixes to source files. Requires enrich true.
+    required: false
+    default: "false"
+  create-fix-pr:
+    description: Open a PR with applied fixes. Requires auto-fix true.
+    required: false
+    default: "false"
+  fix-pr-base:
+    description: Base branch for the fix PR. Defaults to the branch being scanned.
+    required: false
+    default: ""
+
+
 outputs:
   exit-code:
     description: trustabl native exit code (0 clean, 1 findings, 2 error).
@@ -126,6 +149,10 @@ outputs:
     description: Name of the uploaded artifact (when upload-artifact is true).
   sarif-uploaded:
     description: Whether the SARIF was accepted by Code Scanning (true/false).
+  enrich-json-file:
+    description: Path to enriched.json (when enrich is true).
+  fix-pr-url:
+    description: URL of the opened fix PR (when create-fix-pr is true).
 
 runs:
   using: node20

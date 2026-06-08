@@ -25,6 +25,11 @@ export interface Inputs {
   annotations: boolean;
   maxAnnotations: number;
   githubToken: string;
+  enrich: boolean;
+  anthropicKey: string;
+  autoFix: boolean;
+  createFixPr: boolean;
+  fixPrBase: string;
 }
 
 export function parseSeverityThreshold(raw: string): SeverityThreshold {
@@ -59,7 +64,7 @@ export function parsePositiveInt(raw: string, fallback: number, name: string): n
 }
 
 export function readInputs(): Inputs {
-  return {
+  const inputs: Inputs = {
     target: core.getInput('target') || '.',
     version: core.getInput('version') || 'latest',
     detectors: core.getInput('detectors'),
@@ -79,5 +84,23 @@ export function readInputs(): Inputs {
     annotations: core.getBooleanInput('annotations'),
     maxAnnotations: parsePositiveInt(core.getInput('max-annotations'), 10, 'max-annotations'),
     githubToken: core.getInput('github-token'),
+    enrich: core.getBooleanInput('enrich'),
+    anthropicKey: core.getInput('anthropic-key'),
+    autoFix: core.getBooleanInput('auto-fix'),
+    createFixPr: core.getBooleanInput('create-fix-pr'),
+    fixPrBase: core.getInput('fix-pr-base'),
+
   };
+
+  if (inputs.enrich && !inputs.anthropicKey) {
+    throw new Error('anthropic-key is required when enrich is true');
+  }
+  if (inputs.autoFix && !inputs.enrich) {
+    throw new Error('auto-fix requires enrich: true');
+  }
+  if (inputs.createFixPr && !inputs.autoFix) {
+    throw new Error('create-fix-pr requires auto-fix: true');
+  }
+
+  return inputs;
 }
