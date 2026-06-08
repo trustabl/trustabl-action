@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.1] — 2026-06-09
+
+### Changed
+
+- **Runtime is now Node.js 24** (`runs.using: node24`). GitHub is deprecating the
+  Node 20 Actions runtime (runners default to Node 24 on 2026-06-16; Node 20 is
+  removed on 2026-09-16), so this moves ahead of the removal. No behavior change —
+  the bundled `dist/` is identical; the build CI and the `engines` field bump to
+  Node 24 to match the runtime.
+
+
 ## [0.3.0] — 2026-06-09
 
 Tracks trustabl engine **v0.1.4**: consumes the new finding line-range shape and

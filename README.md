@@ -178,7 +178,7 @@ After a run, open the run page and find the **`trustabl-scan-results`** artifact
 
 ## Development
 
-This is a node20 TypeScript action bundled to `dist/` with
+This is a node24 TypeScript action bundled to `dist/` with
 [`ncc`](https://github.com/vercel/ncc).
 
 ```bash
@@ -189,7 +189,7 @@ npm run build       # bundle to dist/index.js (commit the result)
 npm run all         # all of the above
 ```
 
-`dist/` is committed because a node20 action runs `dist/index.js` directly from
+`dist/` is committed because a node24 action runs `dist/index.js` directly from
 the consumer's checkout of the release tag. The **Build check** workflow fails a
 PR whose `dist/` is stale, so always `npm run build` and commit after changing
 `src/`.
