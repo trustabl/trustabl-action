@@ -2,7 +2,7 @@
 // changed lines in the diff; on push they render on the run. Also the fallback
 // channel when SARIF upload is unavailable. Capped and sorted worst-first.
 import * as core from '@actions/core';
-import { Finding, SEVERITY_RANK } from '../types';
+import { Finding, SEVERITY_RANK, findingLines } from '../types';
 
 export function emitAnnotations(findings: Finding[], max: number): void {
   const sorted = [...findings].sort(
@@ -11,10 +11,14 @@ export function emitAnnotations(findings: Finding[], max: number): void {
   const shown = max > 0 ? sorted.slice(0, max) : sorted;
 
   for (const f of shown) {
+    const { start, end } = findingLines(f);
     const props: core.AnnotationProperties = {
       title: `${f.rule_id}: ${f.title}`,
       file: f.file_path || undefined,
-      startLine: f.line > 0 ? f.line : undefined,
+      startLine: start > 0 ? start : undefined,
+      // Span a range only for a genuine multi-line finding with a valid start; a
+      // single-line finding sets startLine alone (GitHub renders one line).
+      endLine: start > 0 && end > start ? end : undefined,
     };
     const msg = f.explanation || f.title || f.rule_id;
     if (f.severity === 'critical' || f.severity === 'high') core.error(msg, props);

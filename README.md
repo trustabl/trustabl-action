@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/github_banner.jpg" alt="Trustabl — open-source tooling for production-ready agentic tools" width="100%">
+</p>
+
 # Trustabl Action
 
 A GitHub Action that runs [trustabl](https://github.com/trustabl/trustabl) — the
@@ -12,6 +16,9 @@ Agents SDK, Google ADK, MCP) — and surfaces the results where you work:
 - **Status-check gating.** Optionally fail the job on a risk-score or severity
   threshold so it can be a required check.
 - **A readiness panel** in the run log and the Step Summary.
+- **Optional dependency CVE scan** (`vuln-scan: true`) — matches your declared
+  dependencies against a pinned OSV snapshot and reports known CVEs as findings,
+  so they appear on every surface (score, gate, annotations, Security tab).
 
 It downloads the official `trustabl` release binary (sha256-verified against the
 release `checksums.txt`), tool-caches it, scans your checkout, and reports.
@@ -70,6 +77,7 @@ jobs:
         with:                         # every input is optional
           # detectors: openai_sdk           # limit SDKs: claude_sdk,openai_sdk,google_adk,openshell
           # version: latest                 # trustabl release to run; pin e.g. v0.5.0 for reproducible CI
+          # vuln-scan: true                 # also scan dependencies for known CVEs (OSV)
           # severity-threshold: high        # fail if any finding >= level (none|low|medium|high|critical)
           # risk-score-threshold: 70        # fail if risk (100 - readiness) >= N (0 disables)
           # comment-on-pr: true             # sticky PR summary comment
@@ -81,7 +89,7 @@ jobs:
 ## Pinned + gated
 
 ```yaml
-- uses: trustabl/trustabl-action@v0.2.0
+- uses: trustabl/trustabl-action@v0.3.0
   with:
     version: v0.5.0
     detectors: claude_sdk,openai_sdk
@@ -98,6 +106,7 @@ jobs:
 | `version` | `latest` | trustabl release tag (e.g. `v0.5.0`) or `latest`. |
 | `detectors` | _(all)_ | Comma-separated subset: `claude_sdk,openai_sdk,google_adk,openshell`. |
 | `strict` | `false` | Pass `--strict` (fail on any finding). |
+| `vuln-scan` | `false` | Match dependencies against a pinned OSV snapshot; report known CVEs as findings. |
 | `rules-ref` | _(default)_ | Pin a `trustabl-rules` git ref. |
 | `rules-repo` | _(default)_ | Override the `trustabl-rules` source repo. |
 | `upload-sarif` | `true` | Upload SARIF to Code Scanning. Needs `security-events: write`. |
@@ -156,7 +165,7 @@ After a run, open the run page and find the **`trustabl-scan-results`** artifact
 
 ## Versioning
 
-- Pin a release: `uses: trustabl/trustabl-action@v0.2.0`.
+- Pin a release: `uses: trustabl/trustabl-action@v0.3.0`.
 - Or track the line: `uses: trustabl/trustabl-action@v0` (the moving major tag).
 
 ## Notes

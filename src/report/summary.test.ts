@@ -43,4 +43,11 @@ describe('buildSummaryMarkdown', () => {
     expect(md).not.toContain('Projected headroom');
     expect(md).toContain('### ✅ Passed scanning');
   });
+
+  it('shows dependency counts in the metrics table only when deps is present (--vuln-scan)', () => {
+    expect(buildSummaryMarkdown(data)).not.toContain('Dependencies scanned');
+    const md = buildSummaryMarkdown({ ...data, deps: { scanned: 12, vulnerable: 2 } });
+    expect(md).toContain('| Dependencies scanned | `12` |');
+    expect(md).toContain('| Known vulnerabilities | `2` |');
+  });
 });
