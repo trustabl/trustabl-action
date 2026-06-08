@@ -45,7 +45,7 @@ export async function runEnrich(
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
   }
 
-  const modified = await getModifiedFiles();
+  const modified = await getModifiedFiles(inputs);
   if (modified.length === 0) {
     core.info('Enrich: no files modified by auto-fix.');
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
@@ -61,12 +61,16 @@ export async function runEnrich(
   return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl, appliedCount: modified.length };
 }
 
-async function getModifiedFiles(): Promise<string[]> {
+const SCAN_OUTPUTS = new Set([ENRICHED_JSON, 'trustabl.json', 'trustabl.sarif']);
+
+async function getModifiedFiles(inputs: Inputs): Promise<string[]> {
   const { stdout } = await exec.getExecOutput('git', ['status', '--porcelain'], { silent: true });
+  const excluded = new Set([ENRICHED_JSON, inputs.jsonFile, inputs.sarifFile]);
   return stdout
     .split('\n')
     .filter((l) => l.trim())
-    .map((l) => l.slice(3).trim());
+    .map((l) => l.slice(3).trim())
+    .filter((f) => !excluded.has(f) && !SCAN_OUTPUTS.has(f));
 }
 
 async function openFixPr(inputs: Inputs, ctx: RunContext, modified: string[]): Promise<string | null> {
@@ -75,6 +79,8 @@ async function openFixPr(inputs: Inputs, ctx: RunContext, modified: string[]): P
   const base = inputs.fixPrBase || ctx.ref.replace('refs/heads/', '');
 
   try {
+    await exec.exec('git', ['config', 'user.email', 'github-actions[bot]@users.noreply.github.com']);
+    await exec.exec('git', ['config', 'user.name', 'github-actions[bot]']);
     await exec.exec('git', ['checkout', '-b', branch]);
     await exec.exec('git', ['add', ...modified]);
     await exec.exec('git', ['commit', '-m', `fix: Trustabl auto-fix findings (run #${runId})`]);

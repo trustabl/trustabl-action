@@ -147,6 +147,7 @@ unaffected and a warning is emitted instead of failing the job.
 | `anthropic-key` | _(none)_ | Anthropic API key for enrichment (BYOK). Required when `enrich` is true. |
 | `auto-fix` | `false` | Apply high-confidence fixes to source files. Requires `enrich: true`. |
 | `create-fix-pr` | `false` | Open a PR with applied fixes. Requires `auto-fix: true`. Needs `contents: write` + `pull-requests: write`. |
+| `enrich-rules` | _(all)_ | Comma-separated rule IDs to enrich (e.g. `ADK-201,ADK-105`). Empty = all findings. |
 | `fix-pr-base` | _(current branch)_ | Base branch for the fix PR. |
 
 ## Outputs
