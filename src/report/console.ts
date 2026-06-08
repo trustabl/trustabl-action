@@ -51,6 +51,10 @@ export function buildConsoleLines(d: ReportData): string[] {
     L.push(row(`Fix +low      ${p.fixMedium} -> ${p.fixLow}  (+${p.fixLow - p.fixMedium})`));
     L.push(row(`Fix +info     ${p.fixLow} -> ${p.fixAll}  (+${p.fixAll - p.fixLow})`));
   }
+  if (d.deps) {
+    L.push(rule());
+    L.push(row(`Dependencies  ${d.deps.scanned} scanned, ${d.deps.vulnerable} known vulns`));
+  }
   L.push(rule());
   L.push(row(`Max severity: ${d.maxSeverity}    Native exit: ${d.nativeExit}`));
   L.push(rule());

@@ -17,11 +17,12 @@ const RELEASE_REPO = 'trustabl';
 const RELEASE_BASE = 'https://github.com/trustabl/trustabl/releases/download';
 
 // MIN_ENGINE_VERSION is the engine release that ships --json-out/--sarif-out, the
-// Code-Scanning-valid SARIF (no fixes[]), and projected_scores. Older binaries
-// still work via the two-scan fallback (single-scan + headroom ladder disabled);
-// we only emit a soft upgrade warning, never a hard failure.
-// TODO(owner): set to the engine release tag cut with those changes.
-export const MIN_ENGINE_VERSION = '0.0.0';
+// Code-Scanning-valid SARIF (no fixes[]), and projected_scores — all introduced
+// together in v0.1.3. Older binaries still work via the two-scan fallback
+// (single-scan + headroom ladder disabled); we only emit a soft upgrade warning,
+// never a hard failure. (The v0.1.4 finding line-range shape is handled
+// version-agnostically in types.ts, so it does not raise this floor.)
+export const MIN_ENGINE_VERSION = 'v0.1.3';
 
 export interface Capabilities {
   fileOut: boolean; // engine supports --json-out / --sarif-out (single-scan dual output)

@@ -34,4 +34,15 @@ describe('buildConsoleLines', () => {
     const lines = buildConsoleLines({ ...base, projected: undefined });
     expect(lines.some((l) => l.includes('Fix critical'))).toBe(false);
   });
+
+  it('renders the dependency line only when deps is present (--vuln-scan)', () => {
+    expect(buildConsoleLines(base).some((l) => l.includes('Dependencies'))).toBe(false);
+    const lines = buildConsoleLines({ ...base, deps: { scanned: 12, vulnerable: 2 } });
+    expect(lines.some((l) => l.includes('Dependencies  12 scanned, 2 known vulns'))).toBe(true);
+    // The added row must preserve the box-width invariant.
+    const width = lines.find((l) => l.startsWith('+'))!.length;
+    for (const l of lines) {
+      if (l.startsWith('|') || l.startsWith('+')) expect(l.length).toBe(width);
+    }
+  });
 });

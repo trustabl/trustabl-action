@@ -11,12 +11,13 @@ permissions:
   security-events: write # SARIF → Code Scanning (upload-sarif default true)
   pull-requests: write # sticky PR comment on the pull_request job
 
-# TEMPORARY PIN — remove once an engine release with `mcp`-category support is the
-# `latest` release. The released engine v0.1.2 predates the `mcp` rule category
-# that trustabl-rules now ships, so `latest` engine + latest rules fails to load
-# ("unknown category mcp"). Every selftest job is pinned to v0.1.2 + the `pre-mcp`
-# rules tag (a known-compatible pair) so CI exercises the ACTION, not the upstream
-# engine↔rules drift. Engine fix: trustabl/trustabl#12.
+# Engine pin — every selftest job pins `version: v0.1.4` (with the engine's default
+# rules) rather than `latest`, so CI is deterministic and exercises the ACTION
+# against a known engine. v0.1.4 is the release that introduced the finding
+# line-range shape (start_line/end_line) this action consumes, so it validates that
+# path end to end. It also supports the `mcp` rule category natively and loads any
+# newer rule leniently, so default rules need no compatibility pin. Bump this when a
+# newer engine release should gate the action.
 
 jobs:
   scan-remote-target:
@@ -31,8 +32,7 @@ jobs:
         continue-on-error: true
         with:
           target: "https://github.com/openai/openai-agents-python"
-          version: "v0.1.2" # pinned — see note above
-          rules-ref: "pre-mcp" # pinned — see note above
+          version: "v0.1.4" # pinned — see note above
           severity-threshold: "none"
           risk-score-threshold: "0"
           comment-on-pr: "false" # remote target; nothing to comment about on this PR
@@ -58,8 +58,7 @@ jobs:
       - uses: ./
         with:
           target: "."
-          version: "v0.1.2"
-          rules-ref: "pre-mcp"
+          version: "v0.1.4"
           comment-on-pr: "false"
 
   scan-pr-surfaces:
@@ -72,7 +71,6 @@ jobs:
       - uses: ./
         with:
           target: "."
-          version: "v0.1.2"
-          rules-ref: "pre-mcp"
+          version: "v0.1.4"
           severity-threshold: "none" # plumbing check only; don't gate the selftest PR
           risk-score-threshold: "0"
