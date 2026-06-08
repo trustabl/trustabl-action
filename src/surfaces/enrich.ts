@@ -17,8 +17,9 @@ export async function runEnrich(
   inputs: Inputs,
   ctx: RunContext,
 ): Promise<EnrichResult> {
+  core.setSecret(inputs.anthropicKey);
   try {
-    await exec.exec(binPath, ['llm', 'key', 'set', inputs.anthropicKey]);
+    await exec.exec(binPath, ['llm', 'key', 'set', inputs.anthropicKey], { silent: true });
   } catch (e) {
     core.warning(`Enrich skipped: failed to configure LLM key: ${e instanceof Error ? e.message : String(e)}`);
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
@@ -31,6 +32,7 @@ export async function runEnrich(
     '--output', ENRICHED_JSON,
   ];
   if (inputs.autoFix) args.push('--apply');
+  for (const rule of inputs.enrichRules) args.push('--rule', rule);
 
   try {
     await exec.exec(binPath, args);

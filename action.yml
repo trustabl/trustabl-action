@@ -124,6 +124,10 @@ inputs:
     description: Open a PR with applied fixes. Requires auto-fix true.
     required: false
     default: "false"
+  enrich-rules:
+    description: Comma-separated rule IDs to enrich (e.g. ADK-201,ADK-105). Empty = all findings.
+    required: false
+    default: ""
   fix-pr-base:
     description: Base branch for the fix PR. Defaults to the branch being scanned.
     required: false

@@ -30,6 +30,7 @@ export interface Inputs {
   autoFix: boolean;
   createFixPr: boolean;
   fixPrBase: string;
+  enrichRules: string[];
 }
 
 export function parseSeverityThreshold(raw: string): SeverityThreshold {
@@ -89,6 +90,7 @@ export function readInputs(): Inputs {
     autoFix: core.getBooleanInput('auto-fix'),
     createFixPr: core.getBooleanInput('create-fix-pr'),
     fixPrBase: core.getInput('fix-pr-base'),
+    enrichRules: core.getInput('enrich-rules').split(',').map((r) => r.trim()).filter(Boolean),
 
   };
 
