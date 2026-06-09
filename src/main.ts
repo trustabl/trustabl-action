@@ -111,12 +111,6 @@ async function run(): Promise<void> {
     core.setOutput('sarif-uploaded', 'false');
   }
 
-  // Downloadable artifact (JSON + SARIF).
-  if (inputs.uploadArtifact) {
-    const days = inputs.artifactRetentionDays ? parseInt(inputs.artifactRetentionDays, 10) : undefined;
-    await uploadResults(inputs.artifactName, [inputs.jsonFile, inputs.sarifFile], days);
-  }
-
   // Surface 2: sticky PR comment (needs pull-requests: write; pull_request only;
   // skipped for a remote target — the comment would describe a different repo).
   if (inputs.commentOnPr && ctx.isPullRequest && !remoteTarget) {
@@ -132,6 +126,15 @@ async function run(): Promise<void> {
   } else {
     core.setOutput('enrich-json-file', '');
     core.setOutput('fix-pr-url', '');
+  }
+
+  // Downloadable artifact (JSON + SARIF + enriched.json when enrich is enabled).
+  // Runs after enrich so enriched.json is present if enrich ran.
+  if (inputs.uploadArtifact) {
+    const days = inputs.artifactRetentionDays ? parseInt(inputs.artifactRetentionDays, 10) : undefined;
+    const artifactFiles = [inputs.jsonFile, inputs.sarifFile];
+    if (inputs.enrich) artifactFiles.push('enriched.json');
+    await uploadResults(inputs.artifactName, artifactFiles, days);
   }
 
   // Surface 3: status-check gating — the job status is the check.
