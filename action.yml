@@ -109,11 +109,15 @@ inputs:
 
   # ── enrich ──────────────────────────────────────────────────────────────
   enrich:
-    description: Run AI enrichment on findings (explanations + fixes). Requires anthropic-key.
+    description: Run AI enrichment on findings (explanations + fixes). Requires llm-key.
     required: false
     default: "false"
-  anthropic-key:
-    description: Anthropic API key for enrichment (BYOK). Required when enrich is true.
+  llm-provider:
+    description: LLM provider for enrichment (e.g. anthropic). Defaults to anthropic.
+    required: false
+    default: "anthropic"
+  llm-key:
+    description: API key for the LLM provider (BYOK). Required when enrich is true.
     required: false
     default: ""
   auto-enrich:

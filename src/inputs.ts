@@ -26,7 +26,8 @@ export interface Inputs {
   maxAnnotations: number;
   githubToken: string;
   enrich: boolean;
-  anthropicKey: string;
+  llmProvider: string;
+  llmKey: string;
   autoEnrich: boolean;
   createFixPr: boolean;
   fixPrBase: string;
@@ -87,7 +88,8 @@ export function readInputs(): Inputs {
     maxAnnotations: parsePositiveInt(core.getInput('max-annotations'), 10, 'max-annotations'),
     githubToken: core.getInput('github-token'),
     enrich: core.getBooleanInput('enrich'),
-    anthropicKey: core.getInput('anthropic-key'),
+    llmProvider: core.getInput('llm-provider') || 'anthropic',
+    llmKey: core.getInput('llm-key'),
     autoEnrich: core.getBooleanInput('auto-enrich'),
     createFixPr: core.getBooleanInput('create-fix-pr'),
     fixPrBase: core.getInput('fix-pr-base'),
@@ -96,8 +98,8 @@ export function readInputs(): Inputs {
 
   };
 
-  if (inputs.enrich && !inputs.anthropicKey) {
-    throw new Error('anthropic-key is required when enrich is true');
+  if (inputs.enrich && !inputs.llmKey) {
+    throw new Error('llm-key is required when enrich is true');
   }
   if (inputs.autoEnrich && !inputs.enrich) {
     throw new Error('auto-enrich requires enrich: true');

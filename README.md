@@ -112,7 +112,7 @@ jobs:
       - uses: trustabl/trustabl-action@v0
         with:
           enrich: true
-          anthropic-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          llm-key: ${{ secrets.ANTHROPIC_API_KEY }}
           auto-enrich: true
           create-fix-pr: true
 ```
@@ -147,8 +147,9 @@ unaffected and a warning is emitted instead of failing the job.
 | `severity-threshold` | `none` | Fail when any finding `>= severity` (`none`/`low`/`medium`/`high`/`critical`). |
 | `branch` | _(auto)_ | Report branch label; auto-detected from the checkout. |
 | `github-token` | `${{ github.token }}` | Token for release lookup, SARIF upload, and PR comments. |
-| `enrich` | `false` | Run AI enrichment on findings (explanations + fixes). Requires `anthropic-key`. |
-| `anthropic-key` | _(none)_ | Anthropic API key for enrichment (BYOK). Required when `enrich` is true. |
+| `enrich` | `false` | Run AI enrichment on findings (explanations + fixes). Requires `llm-key`. |
+| `llm-provider` | `anthropic` | LLM provider for enrichment (e.g. `anthropic`). |
+| `llm-key` | _(none)_ | API key for the LLM provider (BYOK). Required when `enrich` is true. |
 | `auto-enrich` | `false` | Apply AI-generated fixes to source files. Requires `enrich: true`. |
 | `create-fix-pr` | `false` | Open a PR with applied fixes. Requires `auto-enrich: true`. Needs `contents: write` + `pull-requests: write`. |
 | `enrich-model` | _(binary default)_ | Claude model for enrichment (e.g. `claude-sonnet-4-6`). Defaults to `claude-haiku-4-5`. |

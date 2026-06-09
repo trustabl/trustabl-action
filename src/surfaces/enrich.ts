@@ -17,11 +17,12 @@ export async function runEnrich(
   inputs: Inputs,
   ctx: RunContext,
 ): Promise<EnrichResult> {
-  core.setSecret(inputs.anthropicKey);
+  core.setSecret(inputs.llmKey);
   try {
-    await exec.exec(binPath, ['llm', 'key', 'set', inputs.anthropicKey], { silent: true });
+    await exec.exec(binPath, ['llm', 'provider', 'set', inputs.llmProvider]);
+    await exec.exec(binPath, ['llm', 'key', 'set', inputs.llmKey], { silent: true });
   } catch (e) {
-    core.warning(`Enrich skipped: failed to configure LLM key: ${e instanceof Error ? e.message : String(e)}`);
+    core.warning(`Enrich skipped: failed to configure LLM provider/key: ${e instanceof Error ? e.message : String(e)}`);
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
   }
 
