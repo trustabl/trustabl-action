@@ -116,12 +116,12 @@ inputs:
     description: Anthropic API key for enrichment (BYOK). Required when enrich is true.
     required: false
     default: ""
-  auto-fix:
-    description: Apply high-confidence fixes to source files. Requires enrich true.
+  auto-enrich:
+    description: Apply AI-generated fixes to source files. Requires enrich true.
     required: false
     default: "false"
   create-fix-pr:
-    description: Open a PR with applied fixes. Requires auto-fix true.
+    description: Open a PR with applied fixes. Requires auto-enrich true.
     required: false
     default: "false"
   enrich-model:

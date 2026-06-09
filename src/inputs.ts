@@ -27,7 +27,7 @@ export interface Inputs {
   githubToken: string;
   enrich: boolean;
   anthropicKey: string;
-  autoFix: boolean;
+  autoEnrich: boolean;
   createFixPr: boolean;
   fixPrBase: string;
   enrichModel: string;
@@ -88,7 +88,7 @@ export function readInputs(): Inputs {
     githubToken: core.getInput('github-token'),
     enrich: core.getBooleanInput('enrich'),
     anthropicKey: core.getInput('anthropic-key'),
-    autoFix: core.getBooleanInput('auto-fix'),
+    autoEnrich: core.getBooleanInput('auto-enrich'),
     createFixPr: core.getBooleanInput('create-fix-pr'),
     fixPrBase: core.getInput('fix-pr-base'),
     enrichModel: core.getInput('enrich-model'),
@@ -99,11 +99,11 @@ export function readInputs(): Inputs {
   if (inputs.enrich && !inputs.anthropicKey) {
     throw new Error('anthropic-key is required when enrich is true');
   }
-  if (inputs.autoFix && !inputs.enrich) {
-    throw new Error('auto-fix requires enrich: true');
+  if (inputs.autoEnrich && !inputs.enrich) {
+    throw new Error('auto-enrich requires enrich: true');
   }
-  if (inputs.createFixPr && !inputs.autoFix) {
-    throw new Error('create-fix-pr requires auto-fix: true');
+  if (inputs.createFixPr && !inputs.autoEnrich) {
+    throw new Error('create-fix-pr requires auto-enrich: true');
   }
 
   return inputs;

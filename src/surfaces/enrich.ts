@@ -39,7 +39,7 @@ export async function runEnrich(
     '--repo', '.',
     '--output', ENRICHED_JSON,
   ];
-  if (inputs.autoFix) args.push('--apply');
+  if (inputs.autoEnrich) args.push('--apply');
   for (const rule of inputs.enrichRules) args.push('--rule', rule);
 
   try {
@@ -49,13 +49,13 @@ export async function runEnrich(
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
   }
 
-  if (!inputs.autoFix) {
+  if (!inputs.autoEnrich) {
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
   }
 
   const modified = await getModifiedFiles(inputs);
   if (modified.length === 0) {
-    core.info('Enrich: no files modified by auto-fix.');
+    core.info('Enrich: no files modified by auto-enrich.');
     return { enrichedJsonFile: ENRICHED_JSON, fixPrUrl: null, appliedCount: 0 };
   }
 
@@ -91,7 +91,7 @@ async function openFixPr(inputs: Inputs, ctx: RunContext, modified: string[]): P
     await exec.exec('git', ['config', 'user.name', 'github-actions[bot]']);
     await exec.exec('git', ['checkout', '-b', branch]);
     await exec.exec('git', ['add', ...modified]);
-    await exec.exec('git', ['commit', '-m', `fix: Trustabl auto-fix findings (run #${runId})`]);
+    await exec.exec('git', ['commit', '-m', `fix: Trustabl auto-enrich findings (run #${runId})`]);
     await exec.exec('git', ['push', 'origin', branch]);
 
     const octo = github.getOctokit(inputs.githubToken);
@@ -100,7 +100,7 @@ async function openFixPr(inputs: Inputs, ctx: RunContext, modified: string[]): P
       repo: ctx.repo,
       head: branch,
       base,
-      title: `Trustabl auto-fix — run #${runId}`,
+      title: `Trustabl auto-enrich — run #${runId}`,
       body: buildFixPrBody(ctx, runId, modified),
     });
     return pr.html_url;

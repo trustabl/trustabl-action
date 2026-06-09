@@ -123,7 +123,7 @@ async function run(): Promise<void> {
     await upsertComment(inputs.githubToken, ctx, md);
   }
 
-  // Surface 5: enrich → auto-fix → fix PR (best-effort, never fails the job).
+  // Surface 5: enrich → auto-enrich → fix PR (best-effort, never fails the job).
   if (inputs.enrich && !remoteTarget) {
     const er = await runEnrich(installed.binPath, inputs, ctx);
     core.setOutput('enrich-json-file', er.enrichedJsonFile);

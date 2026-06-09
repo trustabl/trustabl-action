@@ -90,11 +90,11 @@ jobs:
     artifact-retention-days: "30"
 ```
 
-## Enrich + auto-fix
+## Enrich + auto-enrich
 
 When `enrich: true`, after the scan the action calls `trustabl enrich` with your
 Anthropic API key to generate AI explanations and code fixes for each finding.
-With `auto-fix: true`, high-confidence fixes are applied directly to source
+With `auto-enrich: true`, high-confidence fixes are applied directly to source
 files. With `create-fix-pr: true`, the patches are committed on a new branch
 and a pull request is opened for human review.
 
@@ -113,12 +113,16 @@ jobs:
         with:
           enrich: true
           anthropic-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          auto-fix: true
+          auto-enrich: true
           create-fix-pr: true
 ```
 
 Enrich is best-effort — if it fails the scan result and gate decision are
 unaffected and a warning is emitted instead of failing the job.
+
+> **Required repo settings when using `create-fix-pr: true`:**
+> Go to **Settings → Actions → General → Workflow permissions** and enable
+> **Read and write permissions** + **Allow GitHub Actions to create and approve pull requests**.
 
 ## Inputs
 
@@ -145,8 +149,8 @@ unaffected and a warning is emitted instead of failing the job.
 | `github-token` | `${{ github.token }}` | Token for release lookup, SARIF upload, and PR comments. |
 | `enrich` | `false` | Run AI enrichment on findings (explanations + fixes). Requires `anthropic-key`. |
 | `anthropic-key` | _(none)_ | Anthropic API key for enrichment (BYOK). Required when `enrich` is true. |
-| `auto-fix` | `false` | Apply high-confidence fixes to source files. Requires `enrich: true`. |
-| `create-fix-pr` | `false` | Open a PR with applied fixes. Requires `auto-fix: true`. Needs `contents: write` + `pull-requests: write`. |
+| `auto-enrich` | `false` | Apply AI-generated fixes to source files. Requires `enrich: true`. |
+| `create-fix-pr` | `false` | Open a PR with applied fixes. Requires `auto-enrich: true`. Needs `contents: write` + `pull-requests: write`. |
 | `enrich-model` | _(binary default)_ | Claude model for enrichment (e.g. `claude-sonnet-4-6`). Defaults to `claude-haiku-4-5`. |
 | `enrich-rules` | _(all)_ | Comma-separated rule IDs to enrich (e.g. `ADK-201,ADK-105`). Empty = all findings. |
 | `fix-pr-base` | _(current branch)_ | Base branch for the fix PR. |
