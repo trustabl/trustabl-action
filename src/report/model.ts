@@ -26,4 +26,5 @@ export interface ReportData {
   deps?: DepsSummary; // present only when --vuln-scan ran
   gate: GateResult;
   rulesVersion: string;
+  fixPrUrl?: string;
 }

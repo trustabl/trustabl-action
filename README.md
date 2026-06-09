@@ -129,6 +129,31 @@ jobs:
 Enrich is best-effort — if it fails the scan result and gate decision are
 unaffected and a warning is emitted instead of failing the job.
 
+**PR-only auto-enrich.** To generate explanations on every push but only apply
+fixes and open a fix PR on pull requests:
+
+```yaml
+- uses: trustabl/trustabl-action@v0
+  with:
+    enrich: true
+    llm-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    auto-enrich: ${{ github.event_name == 'pull_request' }}
+    create-fix-pr: ${{ github.event_name == 'pull_request' }}
+```
+
+**Prevent recursive fix PRs.** The fix PR opened by the action will itself
+trigger a workflow run. To avoid an infinite loop of fix PRs, skip enrich on
+`trustabl/fix-*` branches so those PRs only scan and report:
+
+```yaml
+- uses: trustabl/trustabl-action@v0
+  with:
+    enrich: ${{ !startsWith(github.head_ref, 'trustabl/fix-') }}
+    llm-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    auto-enrich: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'trustabl/fix-') }}
+    create-fix-pr: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'trustabl/fix-') }}
+```
+
 > **Required repo settings when using `create-fix-pr: true`:**
 > Go to **Settings → Actions → General → Workflow permissions** and enable
 > **Read and write permissions** + **Allow GitHub Actions to create and approve pull requests**.

@@ -63,6 +63,25 @@ async function run(): Promise<void> {
     severityThreshold: inputs.severityThreshold,
   });
 
+  // A remote URL target scans a different repo than this checkout, so the
+  // caller-repo-scoped surfaces (Code Scanning upload, PR comment) would
+  // misattribute results to this repo — skip them.
+  const remoteTarget = isRemoteTarget(inputs.target);
+
+  // Surface 5: enrich → auto-enrich → fix PR (best-effort, never fails the job).
+  // Runs before summary/comment so the fix PR URL is included in both.
+  let fixPrUrl: string | null = null;
+  if (inputs.enrich && !remoteTarget) {
+    const er = await runEnrich(installed.binPath, inputs, ctx);
+    fixPrUrl = er.fixPrUrl;
+    core.setOutput('enrich-json-file', er.enrichedJsonFile);
+    core.setOutput('fix-pr-url', er.fixPrUrl ?? '');
+    if (er.fixPrUrl) core.info(`Fix PR opened: ${er.fixPrUrl}`);
+  } else {
+    core.setOutput('enrich-json-file', '');
+    core.setOutput('fix-pr-url', '');
+  }
+
   const data: ReportData = {
     repoLabel: repoLabel(inputs.target, `${ctx.owner}/${ctx.repo}`),
     branch: resolveBranch(inputs.branch, ctx.prHeadRef, ctx.ref),
@@ -76,6 +95,7 @@ async function run(): Promise<void> {
     deps,
     gate,
     rulesVersion: result.rules_version,
+    fixPrUrl: fixPrUrl ?? undefined,
   };
 
   // Outputs (v1 names preserved) + one additive.
@@ -98,11 +118,6 @@ async function run(): Promise<void> {
     emitAnnotations(result.findings, inputs.maxAnnotations);
   }
 
-  // A remote URL target scans a different repo than this checkout, so the
-  // caller-repo-scoped surfaces (Code Scanning upload, PR comment) would
-  // misattribute results to this repo — skip them.
-  const remoteTarget = isRemoteTarget(inputs.target);
-
   // Surface 1b: SARIF → Security tab (needs security-events: write).
   if (inputs.uploadSarif && !remoteTarget) {
     const res = await uploadSarif(inputs.githubToken, ctx, inputs.sarifFile);
@@ -122,17 +137,6 @@ async function run(): Promise<void> {
   // skipped for a remote target — the comment would describe a different repo).
   if (inputs.commentOnPr && ctx.isPullRequest && !remoteTarget) {
     await upsertComment(inputs.githubToken, ctx, md);
-  }
-
-  // Surface 5: enrich → auto-enrich → fix PR (best-effort, never fails the job).
-  if (inputs.enrich && !remoteTarget) {
-    const er = await runEnrich(installed.binPath, inputs, ctx);
-    core.setOutput('enrich-json-file', er.enrichedJsonFile);
-    core.setOutput('fix-pr-url', er.fixPrUrl ?? '');
-    if (er.fixPrUrl) core.info(`Fix PR opened: ${er.fixPrUrl}`);
-  } else {
-    core.setOutput('enrich-json-file', '');
-    core.setOutput('fix-pr-url', '');
   }
 
   // Downloadable artifact (JSON + SARIF + enriched.json when enrich is enabled).

@@ -14,6 +14,7 @@ export interface RunContext {
   ref: string;
   prNumber?: number;
   prHeadRef?: string;
+  prBaseRef?: string;
   isPullRequest: boolean;
 }
 
@@ -22,11 +23,13 @@ export function getRunContext(): RunContext {
   const isPullRequest =
     ctx.eventName === 'pull_request' || ctx.eventName === 'pull_request_target';
   // payload.pull_request is loosely typed (index signature); read defensively.
-  const pr = ctx.payload.pull_request as { number?: number; head?: any } | undefined;
+  const pr = ctx.payload.pull_request as { number?: number; head?: any; base?: any } | undefined;
 
   let prHeadRef: string | undefined;
+  let prBaseRef: string | undefined;
   if (isPullRequest && pr) {
     prHeadRef = pr.head?.ref;
+    prBaseRef = pr.base?.ref;
   }
 
   return {
@@ -37,6 +40,7 @@ export function getRunContext(): RunContext {
     ref: ctx.ref,
     prNumber: pr?.number,
     prHeadRef,
+    prBaseRef,
     isPullRequest,
   };
 }

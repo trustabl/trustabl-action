@@ -79,13 +79,13 @@ async function getModifiedFiles(inputs: Inputs): Promise<string[]> {
     .split('\n')
     .filter((l) => l.trim())
     .map((l) => l.slice(3).trim())
-    .filter((f) => !excluded.has(f) && !SCAN_OUTPUTS.has(f));
+    .filter((f) => !excluded.has(f) && !SCAN_OUTPUTS.has(f) && !f.endsWith('.trustabl.bak'));
 }
 
 async function openFixPr(inputs: Inputs, ctx: RunContext, modified: string[]): Promise<string | null> {
   const runId = github.context.runId;
   const branch = `trustabl/fix-${runId}`;
-  const base = inputs.fixPrBase || ctx.ref.replace('refs/heads/', '');
+  const base = inputs.fixPrBase || ctx.prBaseRef || ctx.ref.replace('refs/heads/', '');
 
   try {
     await exec.exec('git', ['config', 'user.email', 'github-actions[bot]@users.noreply.github.com']);

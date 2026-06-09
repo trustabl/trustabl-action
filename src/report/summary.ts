@@ -94,6 +94,10 @@ export function buildSummaryMarkdown(d: ReportData): string {
     L.push('### ✅ Passed scanning');
   }
 
+  if (d.fixPrUrl) {
+    L.push('', `### 🔧 Fix PR`, '', `An auto-enrich fix PR was opened: [${d.fixPrUrl}](${d.fixPrUrl})`);
+  }
+
   return L.join('\n');
 }
 
