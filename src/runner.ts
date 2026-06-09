@@ -15,6 +15,7 @@ function baseArgs(inputs: Inputs): string[] {
   const args = ['scan', inputs.target || '.', '--no-progress'];
   if (inputs.detectors) args.push('--detectors', inputs.detectors);
   if (inputs.strict) args.push('--strict');
+  if (inputs.vulnScan) args.push('--vuln-scan');
   if (inputs.rulesRef) args.push('--rules-ref', inputs.rulesRef);
   if (inputs.rulesRepo) args.push('--rules-repo', inputs.rulesRepo);
   return args;

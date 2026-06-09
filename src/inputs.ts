@@ -10,6 +10,7 @@ export interface Inputs {
   version: string;
   detectors: string;
   strict: boolean;
+  vulnScan: boolean;
   rulesRef: string;
   rulesRepo: string;
   uploadSarif: boolean;
@@ -72,6 +73,7 @@ export function readInputs(): Inputs {
     version: core.getInput('version') || 'latest',
     detectors: core.getInput('detectors'),
     strict: core.getBooleanInput('strict'),
+    vulnScan: core.getBooleanInput('vuln-scan'),
     rulesRef: core.getInput('rules-ref'),
     rulesRepo: core.getInput('rules-repo'),
     uploadSarif: core.getBooleanInput('upload-sarif'),

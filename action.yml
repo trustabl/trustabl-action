@@ -6,7 +6,7 @@ description: >-
 author: trustabl
 branding:
   icon: shield
-  color: blue
+  color: gray-dark
 
 inputs:
   # ── what to scan ────────────────────────────────────────────────────────
@@ -19,11 +19,19 @@ inputs:
     required: false
     default: latest
   detectors:
-    description: Comma-separated SDK detectors (claude_sdk,openai_sdk,google_adk,openshell). Empty = all.
+    description: Comma-separated SDK detectors (claude_sdk,openai_sdk,google_adk,openshell,mcp,langchain,crewai,pydantic_ai,vercel_ai,autogen). Empty = all.
     required: false
     default: ""
   strict:
     description: Pass --strict (fail on any finding regardless of severity).
+    required: false
+    default: "false"
+  vuln-scan:
+    description: >-
+      Pass --vuln-scan: match declared dependencies against a pinned OSV snapshot
+      and report known CVEs as findings (off by default). Each match becomes a
+      finding, so it flows through the readiness score, gating, annotations, and
+      SARIF. Fetches the OSV database on first use, then caches it.
     required: false
     default: "false"
   rules-ref:
@@ -167,5 +175,5 @@ outputs:
     description: URL of the opened fix PR (when create-fix-pr is true).
 
 runs:
-  using: node20
+  using: node24
   main: dist/index.js

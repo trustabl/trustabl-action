@@ -5,6 +5,59 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.1] — 2026-06-09
+
+### Changed
+
+- **Runtime is now Node.js 24** (`runs.using: node24`). GitHub is deprecating the
+  Node 20 Actions runtime (runners default to Node 24 on 2026-06-16; Node 20 is
+  removed on 2026-09-16), so this moves ahead of the removal. No behavior change —
+  the bundled `dist/` is identical; the build CI and the `engines` field bump to
+  Node 24 to match the runtime.
+
+### Docs
+
+- README + capabilities now document the full SDK coverage (LangChain, CrewAI,
+  Pydantic AI, Vercel AI, AutoGen, MCP servers, and Claude subagents & skills),
+  the opt-in dependency CVE scan, and the complete `detectors` token list; install
+  pins bumped to `v0.3.1`.
+
+
+## [0.3.0] — 2026-06-09
+
+Tracks trustabl engine **v0.1.4**: consumes the new finding line-range shape and
+adds an opt-in dependency CVE scan.
+
+### Added
+
+- **`vuln-scan` input** (default `false`). Passes `--vuln-scan`, so trustabl matches
+  declared dependencies against a pinned OSV snapshot and reports known CVEs. Each
+  match is a finding, so it flows through the readiness score, gating, inline
+  annotations, and the Security tab like any other — plus a dependency headline
+  (dependencies scanned / known vulnerabilities) in the console panel, Step
+  Summary, and PR comment.
+
+### Changed
+
+- **Finding line ranges.** The action reads the engine's `start_line`/`end_line`
+  (engine ≥ v0.1.4) and renders multi-line inline annotations across the finding's
+  full span. The legacy single `line` field is still read as a fallback, so the
+  action stays correct against older pinned engines.
+- **`skill` scope** added to the typed scope / surface-kind unions, matching the
+  engine's five detection scopes (tool, agent, subagent, skill, repo).
+- **`MIN_ENGINE_VERSION` is now `v0.1.3`** (previously an unset placeholder) — the
+  release that introduced single-scan dual output, Code-Scanning-valid SARIF, and
+  the projected-scores headroom ladder. Older engines still run via the two-scan
+  fallback with a soft upgrade warning.
+
+### Fixed
+
+- **Inline annotations no longer collapse to the top of the file** against engine
+  v0.1.4. The engine renamed the finding `line` field to `start_line`/`end_line`;
+  the action still read `line`, so each annotation lost its line number. It now
+  resolves the range from either shape.
+
+
 ## [0.2.0] — 2026-06-04
 
 A full rewrite from the bash composite action to a **node20 TypeScript action**,

@@ -47,6 +47,12 @@ async function run(): Promise<void> {
   const maxSev = maxSeverity(result.findings);
   const counts = severityCounts(result.findings);
   const projected = result.projected_scores ? projectedReadiness(result.projected_scores) : undefined;
+  // Dependency headline — only when the caller opted into --vuln-scan. The vuln
+  // matches themselves already flow through findings (counts, gate, annotations,
+  // SARIF); this is the BOM/OSV summary on top.
+  const deps = inputs.vulnScan
+    ? { scanned: result.dependencies?.length ?? 0, vulnerable: result.vulnerabilities?.length ?? 0 }
+    : undefined;
 
   const gate = evaluateGate({
     nativeExit,
@@ -67,6 +73,7 @@ async function run(): Promise<void> {
     nativeExit,
     severityCounts: counts,
     projected,
+    deps,
     gate,
     rulesVersion: result.rules_version,
   };

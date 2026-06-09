@@ -74,6 +74,10 @@ export function buildSummaryMarkdown(d: ReportData): string {
   L.push(`| Readiness score | \`${d.readiness}\` |`);
   L.push(`| Risk score | \`${d.risk}\` |`);
   L.push(`| Findings | \`${d.findingsCount}\` |`);
+  if (d.deps) {
+    L.push(`| Dependencies scanned | \`${d.deps.scanned}\` |`);
+    L.push(`| Known vulnerabilities | \`${d.deps.vulnerable}\` |`);
+  }
   L.push(`| Max severity | \`${d.maxSeverity}\` |`);
   L.push(`| Native exit | \`${d.nativeExit}\` |`);
   if (d.rulesVersion) L.push(`| Rules version | \`${d.rulesVersion}\` |`);
