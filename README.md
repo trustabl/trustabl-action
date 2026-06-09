@@ -102,7 +102,7 @@ jobs:
 ## Enrich + auto-enrich
 
 When `enrich: true`, after the scan the action calls `trustabl enrich` with your
-Anthropic API key to generate AI explanations and code fixes for each finding.
+LLM API key to generate AI explanations and code fixes for each finding.
 With `auto-enrich: true`, high-confidence fixes are applied directly to source
 files. With `create-fix-pr: true`, the patches are committed on a new branch
 and a pull request is opened for human review.
@@ -141,18 +141,6 @@ fixes and open a fix PR on pull requests:
     create-fix-pr: ${{ github.event_name == 'pull_request' }}
 ```
 
-**Prevent recursive fix PRs.** The fix PR opened by the action will itself
-trigger a workflow run. To avoid an infinite loop of fix PRs, skip enrich on
-`trustabl/fix-*` branches so those PRs only scan and report:
-
-```yaml
-- uses: trustabl/trustabl-action@v0
-  with:
-    enrich: ${{ !startsWith(github.head_ref, 'trustabl/fix-') }}
-    llm-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    auto-enrich: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'trustabl/fix-') }}
-    create-fix-pr: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'trustabl/fix-') }}
-```
 
 > **Required repo settings when using `create-fix-pr: true`:**
 > Go to **Settings → Actions → General → Workflow permissions** and enable
