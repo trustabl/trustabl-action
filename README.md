@@ -99,6 +99,53 @@ jobs:
     artifact-retention-days: "30"
 ```
 
+## Enrich + auto-enrich
+
+When `enrich: true`, after the scan the action calls `trustabl enrich` with your
+LLM API key to generate AI explanations and code fixes for each finding.
+With `auto-enrich: true`, high-confidence fixes are applied directly to source
+files. With `create-fix-pr: true`, the patches are committed on a new branch
+and a pull request is opened for human review.
+
+```yaml
+permissions:
+  contents: write        # push fix branch
+  pull-requests: write   # open fix PR
+  security-events: write
+  
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: trustabl/trustabl-action@v0
+        with:
+          enrich: true
+          llm-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          auto-enrich: true
+          create-fix-pr: true
+```
+
+Enrich is best-effort — if it fails the scan result and gate decision are
+unaffected and a warning is emitted instead of failing the job.
+
+**PR-only auto-enrich.** To generate explanations on every push but only apply
+fixes and open a fix PR on pull requests:
+
+```yaml
+- uses: trustabl/trustabl-action@v0
+  with:
+    enrich: true
+    llm-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    auto-enrich: ${{ github.event_name == 'pull_request' }}
+    create-fix-pr: ${{ github.event_name == 'pull_request' }}
+```
+
+
+> **Required repo settings when using `create-fix-pr: true`:**
+> Go to **Settings → Actions → General → Workflow permissions** and enable
+> **Read and write permissions** + **Allow GitHub Actions to create and approve pull requests**.
+
 ## Inputs
 
 | Name | Default | Description |
@@ -123,6 +170,14 @@ jobs:
 | `severity-threshold` | `none` | Fail when any finding `>= severity` (`none`/`low`/`medium`/`high`/`critical`). |
 | `branch` | _(auto)_ | Report branch label; auto-detected from the checkout. |
 | `github-token` | `${{ github.token }}` | Token for release lookup, SARIF upload, and PR comments. |
+| `enrich` | `false` | Run AI enrichment on findings (explanations + fixes). Requires `llm-key`. |
+| `llm-provider` | `anthropic` | LLM provider for enrichment (e.g. `anthropic`). |
+| `llm-key` | _(none)_ | API key for the LLM provider (BYOK). Required when `enrich` is true. |
+| `auto-enrich` | `false` | Apply AI-generated fixes to source files. Requires `enrich: true`. |
+| `create-fix-pr` | `false` | Open a PR with applied fixes. Requires `auto-enrich: true`. Needs `contents: write` + `pull-requests: write`. |
+| `enrich-model` | _(binary default)_ | Claude model for enrichment (e.g. `claude-sonnet-4-6`). Defaults to `claude-haiku-4-5`. |
+| `enrich-rules` | _(all)_ | Comma-separated rule IDs to enrich (e.g. `ADK-201,ADK-105`). Empty = all findings. |
+| `fix-pr-base` | _(current branch)_ | Base branch for the fix PR. |
 
 ## Outputs
 
@@ -137,6 +192,8 @@ jobs:
 | `sarif-file` | Path to the emitted SARIF file. |
 | `json-file` | Path to the emitted JSON file. |
 | `artifact-name` | Artifact name used for the upload. |
+| `enrich-json-file` | Path to `enriched.json` (when `enrich` is true). |
+| `fix-pr-url` | URL of the opened fix PR (when `create-fix-pr` is true). |
 
 ## How it works
 

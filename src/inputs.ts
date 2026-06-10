@@ -26,6 +26,14 @@ export interface Inputs {
   annotations: boolean;
   maxAnnotations: number;
   githubToken: string;
+  enrich: boolean;
+  llmProvider: string;
+  llmKey: string;
+  autoEnrich: boolean;
+  createFixPr: boolean;
+  fixPrBase: string;
+  enrichModel: string;
+  enrichRules: string[];
 }
 
 export function parseSeverityThreshold(raw: string): SeverityThreshold {
@@ -60,7 +68,7 @@ export function parsePositiveInt(raw: string, fallback: number, name: string): n
 }
 
 export function readInputs(): Inputs {
-  return {
+  const inputs: Inputs = {
     target: core.getInput('target') || '.',
     version: core.getInput('version') || 'latest',
     detectors: core.getInput('detectors'),
@@ -81,5 +89,26 @@ export function readInputs(): Inputs {
     annotations: core.getBooleanInput('annotations'),
     maxAnnotations: parsePositiveInt(core.getInput('max-annotations'), 10, 'max-annotations'),
     githubToken: core.getInput('github-token'),
+    enrich: core.getBooleanInput('enrich'),
+    llmProvider: core.getInput('llm-provider') || 'anthropic',
+    llmKey: core.getInput('llm-key'),
+    autoEnrich: core.getBooleanInput('auto-enrich'),
+    createFixPr: core.getBooleanInput('create-fix-pr'),
+    fixPrBase: core.getInput('fix-pr-base'),
+    enrichModel: core.getInput('enrich-model'),
+    enrichRules: core.getInput('enrich-rules').split(',').map((r) => r.trim()).filter(Boolean),
+
   };
+
+  if (inputs.enrich && !inputs.llmKey) {
+    throw new Error('llm-key is required when enrich is true');
+  }
+  if (inputs.autoEnrich && !inputs.enrich) {
+    throw new Error('auto-enrich requires enrich: true');
+  }
+  if (inputs.createFixPr && !inputs.autoEnrich) {
+    throw new Error('create-fix-pr requires auto-enrich: true');
+  }
+
+  return inputs;
 }

@@ -115,6 +115,41 @@ inputs:
     required: false
     default: ${{ github.token }}
 
+  # ── enrich ──────────────────────────────────────────────────────────────
+  enrich:
+    description: Run AI enrichment on findings (explanations + fixes). Requires llm-key.
+    required: false
+    default: "false"
+  llm-provider:
+    description: LLM provider for enrichment (e.g. anthropic). Defaults to anthropic.
+    required: false
+    default: "anthropic"
+  llm-key:
+    description: API key for the LLM provider (BYOK). Required when enrich is true.
+    required: false
+    default: ""
+  auto-enrich:
+    description: Apply AI-generated fixes to source files. Requires enrich true.
+    required: false
+    default: "false"
+  create-fix-pr:
+    description: Open a PR with applied fixes. Requires auto-enrich true.
+    required: false
+    default: "false"
+  enrich-model:
+    description: Claude model to use for enrichment (e.g. claude-sonnet-4-6). Defaults to the trustabl binary default (claude-haiku-4-5).
+    required: false
+    default: ""
+  enrich-rules:
+    description: Comma-separated rule IDs to enrich (e.g. ADK-201,ADK-105). Empty = all findings.
+    required: false
+    default: ""
+  fix-pr-base:
+    description: Base branch for the fix PR. Defaults to the branch being scanned.
+    required: false
+    default: ""
+
+
 outputs:
   exit-code:
     description: trustabl native exit code (0 clean, 1 findings, 2 error).
@@ -134,6 +169,10 @@ outputs:
     description: Name of the uploaded artifact (when upload-artifact is true).
   sarif-uploaded:
     description: Whether the SARIF was accepted by Code Scanning (true/false).
+  enrich-json-file:
+    description: Path to enriched.json (when enrich is true).
+  fix-pr-url:
+    description: URL of the opened fix PR (when create-fix-pr is true).
 
 runs:
   using: node24
