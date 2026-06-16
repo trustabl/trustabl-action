@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://github.com/marketplace/actions/trustabl"><img src="https://img.shields.io/badge/GitHub%20Marketplace-Trustabl-2088FF?logo=githubactions&logoColor=white" alt="Trustabl on GitHub Marketplace"></a>
   <a href="https://github.com/trustabl/trustabl/releases"><img src="https://img.shields.io/github/downloads/trustabl/trustabl/total?logo=github&label=downloads&color=2088FF" alt="trustabl binary downloads"></a>
+  <a href="https://github.com/search?q=uses%3A+trustabl%2Ftrustabl-action+path%3A.github%2Fworkflows&type=code"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftrustabl%2Ftrustabl-action%2Fmain%2F.github%2Fbadges%2Ftrustabl-action.json" alt="Used by (repos)"></a>
 </p>
 
 # Trustabl Action
