@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/marketplace/actions/trustabl"><img src="https://img.shields.io/badge/GitHub%20Marketplace-Trustabl-2088FF?logo=githubactions&logoColor=white" alt="Trustabl on GitHub Marketplace"></a>
+  <a href="https://github.com/trustabl/trustabl/releases"><img src="https://img.shields.io/github/downloads/trustabl/trustabl/total?label=trustabl%20downloads&color=2ea043" alt="trustabl binary downloads"></a>
 </p>
 
 # Trustabl Action
