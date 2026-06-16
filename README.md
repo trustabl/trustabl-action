@@ -2,6 +2,10 @@
   <img src="assets/github_banner.jpg" alt="Trustabl — open-source tooling for production-ready agentic tools" width="100%">
 </p>
 
+<p align="center">
+  <a href="https://github.com/marketplace/actions/trustabl"><img src="https://img.shields.io/badge/GitHub%20Marketplace-Trustabl-2088FF?logo=githubactions&logoColor=white" alt="Trustabl on GitHub Marketplace"></a>
+</p>
+
 # Trustabl Action
 
 A GitHub Action that runs [trustabl](https://github.com/trustabl/trustabl) — the
