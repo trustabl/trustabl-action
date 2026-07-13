@@ -1,6 +1,1 @@
-{
-  "schemaVersion": 1,
-  "label": "used by",
-  "message": "0",
-  "color": "blue"
-}
+{"color": "blue", "label": "used by", "logoColor": "#fff", "message": "1", "namedLogo": "githubactions", "schemaVersion": 1}
