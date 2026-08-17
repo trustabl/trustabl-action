@@ -1,22 +1,16 @@
 <p align="center">
-  <img src="assets/github_banner.jpg" alt="Trustabl GitHub Action — AI agent reliability in CI" width="100%">
-</p>
-
-<p align="center">
-  <a href="https://github.com/marketplace/actions/trustabl"><img src="https://img.shields.io/badge/GitHub%20Marketplace-Trustabl-2088FF?logo=githubactions&logoColor=white" alt="Trustabl on GitHub Marketplace"></a>
+  <a href="https://github.com/marketplace/actions/trustabl-fix-agent-reliability"><img src="https://img.shields.io/badge/GitHub%20Marketplace-Trustabl-2088FF?logo=githubactions&logoColor=white" alt="Trustabl on GitHub Marketplace"></a>
   <a href="https://github.com/trustabl/trustabl/releases"><img src="https://img.shields.io/github/downloads/trustabl/trustabl/total?logo=github&label=downloads&color=2088FF" alt="trustabl binary downloads"></a>
   <a href="https://github.com/search?q=uses%3A+trustabl%2Ftrustabl-action+path%3A.github%2Fworkflows&type=code"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftrustabl%2Ftrustabl-action%2Fmain%2F.github%2Fbadges%2Ftrustabl-action.json" alt="Used by (repos)"></a>
 </p>
 
-# Trustabl Action
+# Trustabl fix agent reliability
 
-AI agent reliability in CI — finds and fixes reliability and safety defects in
-agent repos.
+Trustabl scans and fixes your agents for production reliability and performance
+issues across Claude Agent SDK, OpenAI Agents SDK, Google ADK, MCP, LangChain,
+LangGraph, CrewAI, AutoGen AG2, Pydantic AI, and Vercel AI.
 
-A GitHub Action that runs [trustabl](https://github.com/trustabl/trustabl)
-against Claude Agent SDK, OpenAI Agents SDK, Google ADK, LangChain / LangGraph,
-CrewAI, Pydantic AI, Vercel AI SDK, AutoGen, and MCP servers — plus Claude
-subagents and skills — and surfaces the results where you work:
+A GitHub Action that surfaces the results where you work:
 
 - **Inline PR annotations + the Security tab.** Findings are uploaded to GitHub
   Code Scanning, so they appear on the changed lines in the PR diff and in the

@@ -1,8 +1,7 @@
-name: Trustabl
+name: Trustabl - Fix agent reliability issues
 description: >-
-  Static reliability/safety scanner for AI agent repos (Claude, OpenAI,
-  Google ADK, MCP). Inline PR annotations + Security tab, a sticky PR comment,
-  CI gating, and a readiness panel.
+  Fix agent reliability issues across Claude, OpenAI, Google ADK, MCP,
+  LangChain, LangGraph, CrewAI, AutoGen AG2, Pydantic AI, Vercel AI.
 author: trustabl
 branding:
   icon: shield

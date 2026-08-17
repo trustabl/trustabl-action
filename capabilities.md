@@ -1,4 +1,4 @@
-### Trustabl Action — capabilities
+### Trustabl fix agent reliability — capabilities
 
 - **Static reliability/safety scan** for agent repos (Claude Agent SDK, OpenAI
   Agents SDK, Google ADK, LangChain, CrewAI, Pydantic AI, Vercel AI, AutoGen, MCP
