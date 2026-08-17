@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/github_banner.jpg" alt="Trustabl — open-source tooling for production-ready agentic tools" width="100%">
+  <img src="assets/github_banner.jpg" alt="Trustabl GitHub Action — AI agent reliability in CI" width="100%">
 </p>
 
 <p align="center">
@@ -10,10 +10,13 @@
 
 # Trustabl Action
 
-A GitHub Action that runs [trustabl](https://github.com/trustabl/trustabl) — the
-static reliability/safety analyzer for agent repos (Claude Agent SDK, OpenAI
-Agents SDK, Google ADK, LangChain, CrewAI, Pydantic AI, Vercel AI, AutoGen, MCP
-servers, and Claude subagents & skills) — and surfaces the results where you work:
+AI agent reliability in CI — finds and fixes reliability and safety defects in
+agent repos.
+
+A GitHub Action that runs [trustabl](https://github.com/trustabl/trustabl)
+against Claude Agent SDK, OpenAI Agents SDK, Google ADK, LangChain / LangGraph,
+CrewAI, Pydantic AI, Vercel AI SDK, AutoGen, and MCP servers — plus Claude
+subagents and skills — and surfaces the results where you work:
 
 - **Inline PR annotations + the Security tab.** Findings are uploaded to GitHub
   Code Scanning, so they appear on the changed lines in the PR diff and in the
