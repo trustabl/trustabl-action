@@ -1,7 +1,7 @@
 name: Trustabl - Fix agent reliability issues
 description: >-
-  Fix agent reliability issues across Claude, OpenAI, Google ADK, MCP,
-  LangChain, LangGraph, CrewAI, AutoGen AG2, Pydantic AI, Vercel AI.
+  Fix agent reliability issues: Claude, OpenAI, ADK, MCP, LangChain,
+  LangGraph, CrewAI, AutoGen AG2, Pydantic AI, Vercel AI.
 author: trustabl
 branding:
   icon: shield
