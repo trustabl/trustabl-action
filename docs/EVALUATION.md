@@ -7,7 +7,8 @@ place in your pipeline, and **reading the results** once it runs.
 
 ## What Trustabl evaluates
 
-Trustabl is a static analyzer for AI-agent codebases. It inventories the agents,
+Trustabl analyses AI-agent codebases for reliability, safety, and security
+defects. It inventories the agents,
 tools, subagents, skills and MCP servers in a repository, then evaluates each one
 against a rule pack covering ten ecosystems: Claude Agent SDK, OpenAI Agents SDK,
 Google ADK, MCP, LangChain, LangGraph, CrewAI, AutoGen AG2, Pydantic AI and
