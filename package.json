@@ -2,7 +2,7 @@
   "name": "trustabl-action",
   "version": "0.3.1",
   "private": true,
-  "description": "Static reliability/safety scanner for AI agent repos (Claude, OpenAI, Google ADK, MCP) — GitHub Action.",
+  "description": "Fix agent reliability issues in AI agent repos (Claude, OpenAI, Google ADK, LangChain, CrewAI, MCP) — GitHub Action.",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/main.ts -o dist --license licenses.txt",

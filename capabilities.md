@@ -1,6 +1,6 @@
 ### Trustabl fix agent reliability — capabilities
 
-- **Static reliability/safety scan** for agent repos (Claude Agent SDK, OpenAI
+- **Agent reliability scan** for agent repos (Claude Agent SDK, OpenAI
   Agents SDK, Google ADK, LangChain, CrewAI, Pydantic AI, Vercel AI, AutoGen, MCP
   servers, and Claude subagents & skills) — runs the upstream `trustabl` binary
   over your checkout, no daemon or hosted service.
