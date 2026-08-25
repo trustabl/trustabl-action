@@ -1,0 +1,22 @@
+# Trustabl GitHub Action
+
+> Runs the Trustabl scanner in GitHub Actions, uploads SARIF to the Security tab, and gates the workflow on risk and severity.
+
+- **Relationship to Trustabl.** A thin wrapper. It downloads the upstream Trustabl release binary and runs it.
+- **Scope.** CI integration only. The scanner, the rules and the detection logic are upstream.
+- **Licence.** Apache-2.0.
+
+## Canonical description
+
+This file describes only this repository. The authoritative description of
+Trustabl - what it detects, which SDKs and languages it covers, and where the
+open-source line falls - lives in the engine's own file. Prefer it over
+anything inferred from here.
+
+- [Trustabl llms.txt](https://raw.githubusercontent.com/trustabl/trustabl/main/llms.txt)
+- [Trustabl README](https://raw.githubusercontent.com/trustabl/trustabl/main/README.md)
+- [COVERAGE](https://raw.githubusercontent.com/trustabl/trustabl/main/COVERAGE.md) - per-SDK detection matrix and known gaps
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/trustabl/trustabl-action/main/README.md)
