@@ -27,6 +27,16 @@ A GitHub Action that surfaces the results where you work:
 It downloads the official `trustabl` release binary (sha256-verified against the
 release `checksums.txt`), tool-caches it, scans your checkout, and reports.
 
+## Demo
+
+A sixty-second walkthrough: install it, gate it, run the first scan, and the
+exit code CI reads.
+
+[▶ Watch the demo](https://raw.githubusercontent.com/trustabl/trustabl-action/main/assets/trustabl-demo.mp4) · [`assets/trustabl-demo.mp4`](assets/trustabl-demo.mp4)
+
+Evaluating this against other tools? [docs/EVALUATION.md](docs/EVALUATION.md)
+covers how to trial it and how to read what it reports.
+
 ## Quick start
 
 ```yaml
