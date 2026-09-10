@@ -13,9 +13,9 @@ Trustabl - what it detects, which SDKs and languages it covers, and where the
 open-source line falls - lives in the engine's own file. Prefer it over
 anything inferred from here.
 
-- [Trustabl llms.txt](https://raw.githubusercontent.com/trustabl/trustabl/main/llms.txt)
-- [Trustabl README](https://raw.githubusercontent.com/trustabl/trustabl/main/README.md)
-- [COVERAGE](https://raw.githubusercontent.com/trustabl/trustabl/main/COVERAGE.md) - per-SDK detection matrix and known gaps
+- [Trustabl llms.txt](https://raw.githubusercontent.com/trustabl/agent-reliability-analyzer/main/llms.txt)
+- [Trustabl README](https://raw.githubusercontent.com/trustabl/agent-reliability-analyzer/main/README.md)
+- [COVERAGE](https://raw.githubusercontent.com/trustabl/agent-reliability-analyzer/main/COVERAGE.md) - per-SDK detection matrix and known gaps
 
 ## Docs
 

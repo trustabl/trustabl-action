@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/marketplace/actions/trustabl-fix-agent-reliability-issues"><img src="https://img.shields.io/badge/GitHub%20Marketplace-Trustabl-2088FF?logo=githubactions&logoColor=white" alt="Trustabl on GitHub Marketplace"></a>
-  <a href="https://github.com/trustabl/trustabl/releases"><img src="https://img.shields.io/github/downloads/trustabl/trustabl/total?logo=github&label=downloads&color=2088FF" alt="trustabl binary downloads"></a>
+  <a href="https://github.com/trustabl/agent-reliability-analyzer/releases"><img src="https://img.shields.io/github/downloads/trustabl/agent-reliability-analyzer/total?logo=github&label=downloads&color=2088FF" alt="trustabl binary downloads"></a>
   <a href="https://github.com/search?q=uses%3A+trustabl%2Ftrustabl-action+path%3A.github%2Fworkflows&type=code"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftrustabl%2Ftrustabl-action%2Fmain%2F.github%2Fbadges%2Ftrustabl-action.json" alt="Used by (repos)"></a>
 </p>
 
@@ -168,8 +168,8 @@ fixes and open a fix PR on pull requests:
 | `detectors` | _(all)_ | Comma-separated SDK subset: `claude_sdk`, `openai_sdk`, `google_adk`, `openshell`, `mcp`, `langchain`, `crewai`, `pydantic_ai`, `vercel_ai`, `autogen`. |
 | `strict` | `false` | Pass `--strict` (fail on any finding). |
 | `vuln-scan` | `false` | Match dependencies against a pinned OSV snapshot; report known CVEs as findings. |
-| `rules-ref` | _(default)_ | Pin a `trustabl-rules` git ref. |
-| `rules-repo` | _(default)_ | Override the `trustabl-rules` source repo. |
+| `rules-ref` | _(default)_ | Pin an `agent-reliability-rules` git ref. |
+| `rules-repo` | _(default)_ | Override the `agent-reliability-rules` source repo. |
 | `upload-sarif` | `true` | Upload SARIF to Code Scanning. Needs `security-events: write`. |
 | `sarif-file` | `trustabl.sarif` | SARIF output path. |
 | `json-file` | `trustabl.json` | JSON `ScanResult` output path. |

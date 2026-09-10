@@ -34,11 +34,11 @@ inputs:
     required: false
     default: "false"
   rules-ref:
-    description: Pin trustabl-rules git ref. Empty = engine default.
+    description: Pin agent-reliability-rules git ref. Empty = engine default.
     required: false
     default: ""
   rules-repo:
-    description: Override trustabl-rules source repo (owner/name or URL).
+    description: Override agent-reliability-rules source repo (owner/name or URL).
     required: false
     default: ""
 
