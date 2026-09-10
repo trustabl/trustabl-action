@@ -13,8 +13,8 @@ import { parseVersion, gte } from './version';
 import { runProcess } from './process';
 
 const RELEASE_OWNER = 'trustabl';
-const RELEASE_REPO = 'trustabl';
-const RELEASE_BASE = 'https://github.com/trustabl/trustabl/releases/download';
+const RELEASE_REPO = 'agent-reliability-analyzer';
+const RELEASE_BASE = 'https://github.com/trustabl/agent-reliability-analyzer/releases/download';
 
 // MIN_ENGINE_VERSION is the engine release that ships --json-out/--sarif-out, the
 // Code-Scanning-valid SARIF (no fixes[]), and projected_scores — all introduced

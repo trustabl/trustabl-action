@@ -17,7 +17,7 @@ in the release notes unless you would rather we did not.
 This repository is a thin GitHub Action around the Trustabl CLI. It downloads the
 upstream release binary, verifies it, runs a scan, and gates the build. The
 scanner itself lives in
-[trustabl/trustabl](https://github.com/trustabl/trustabl).
+[trustabl/agent-reliability-analyzer](https://github.com/trustabl/agent-reliability-analyzer).
 
 **In scope here**
 
@@ -35,7 +35,7 @@ scanner itself lives in
   normal issue
 - Vulnerabilities in a repository you scanned. Those belong to that repository
 - Defects in the scanner itself. Report those to
-  [trustabl/trustabl](https://github.com/trustabl/trustabl/security/advisories/new) so one advisory covers every integration
+  [trustabl/agent-reliability-analyzer](https://github.com/trustabl/agent-reliability-analyzer/security/advisories/new) so one advisory covers every integration
 
 ## Supported versions
 
