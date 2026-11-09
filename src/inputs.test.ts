@@ -1,4 +1,20 @@
-import { parseSeverityThreshold, parseRiskThreshold, parsePositiveInt } from './inputs';
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseSeverityThreshold, parseRiskThreshold, parsePositiveInt, DEFAULT_VERSION } from './inputs';
+
+describe('DEFAULT_VERSION', () => {
+  it('is an exact release tag, not latest', () => {
+    expect(DEFAULT_VERSION).toMatch(/^v\d+\.\d+\.\d+$/);
+  });
+  it('matches the version default in action.yml', () => {
+    // The first `default:` after the `version:` input key is that input's default.
+    const lines = fs.readFileSync(path.join(__dirname, '..', 'action.yml'), 'utf8').split(/\r?\n/);
+    const start = lines.findIndex((l) => l.trimEnd() === '  version:');
+    expect(start).toBeGreaterThanOrEqual(0);
+    const line = lines.slice(start + 1).find((l) => /^ {4}default:/.test(l));
+    expect(line?.replace(/^ {4}default:\s*/, '').replace(/"/g, '').trim()).toBe(DEFAULT_VERSION);
+  });
+});
 
 describe('parseSeverityThreshold', () => {
   it('treats empty and none as disabled', () => {

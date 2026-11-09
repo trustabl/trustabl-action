@@ -5,6 +5,12 @@ import { Severity } from './types';
 
 export type SeverityThreshold = 'none' | Severity;
 
+// The trustabl release used when the `version` input is empty. Pinned rather
+// than 'latest' so a new engine release cannot change a pipeline's results until
+// this pin is bumped (engine-bump.yml opens that pull request). It must equal the
+// `version` default in action.yml; inputs.test.ts checks that it does.
+export const DEFAULT_VERSION = 'v0.1.16';
+
 export interface Inputs {
   target: string;
   version: string;
@@ -70,7 +76,7 @@ export function parsePositiveInt(raw: string, fallback: number, name: string): n
 export function readInputs(): Inputs {
   const inputs: Inputs = {
     target: core.getInput('target') || '.',
-    version: core.getInput('version') || 'latest',
+    version: core.getInput('version') || DEFAULT_VERSION,
     detectors: core.getInput('detectors'),
     strict: core.getBooleanInput('strict'),
     vulnScan: core.getBooleanInput('vuln-scan'),

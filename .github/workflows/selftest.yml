@@ -18,6 +18,10 @@ permissions:
 # path end to end. It also supports the `mcp` rule category natively and loads any
 # newer rule leniently, so default rules need no compatibility pin. Bump this when a
 # newer engine release should gate the action.
+#
+# The one exception is scan-default-engine, which sets no `version` so it runs the
+# action's pinned default (action.yml). That makes every pin bump download and
+# checksum-verify the new release here before it reaches users.
 
 jobs:
   scan-remote-target:
@@ -60,6 +64,24 @@ jobs:
           target: "."
           version: "v0.1.4"
           comment-on-pr: "false"
+
+  scan-default-engine:
+    # No `version` input: runs the pinned default end to end (download, sha256
+    # check against checksums.txt, scan of this clean repo).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          target: "."
+          comment-on-pr: "false"
+      - name: Assert the pinned engine ran
+        run: |
+          want=$(sed -n "s/^export const DEFAULT_VERSION = '\(.*\)';$/\1/p" src/inputs.ts)
+          got=$(trustabl version)
+          echo "pinned $want, ran: $got"
+          test -n "$want"
+          printf '%s' "$got" | grep -qF "${want#v}"
 
   scan-pr-surfaces:
     # On pull_request, exercise the PR-only surfaces end to end (inline

@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Changed
+
+- **The `version` input now defaults to engine `v0.1.16` instead of `latest`.**
+  A new trustabl engine release no longer changes a pipeline's results on its
+  own; the pin moves only in a reviewed pull request. The download is still
+  sha256-verified against the release `checksums.txt`. To keep the old
+  behaviour, set `version: latest`; any explicit `version` keeps working as
+  before.
+
+### Added
+
+- `engine-bump` workflow (weekly and on demand): opens a pull request that moves
+  the default pin when a newer engine release exists. It never merges.
+- Selftest job `scan-default-engine`, which runs the action with no `version`
+  input so CI downloads and verifies the pinned default.
+
+
 ## [0.3.1] — 2026-06-09
 
 ### Changed

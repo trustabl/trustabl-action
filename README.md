@@ -90,7 +90,7 @@ jobs:
       - uses: trustabl/trustabl-action@v0
         with:                         # every input is optional
           # detectors: openai_sdk           # limit SDKs: claude_sdk,openai_sdk,google_adk,openshell
-          # version: latest                 # trustabl release to run; pin e.g. v0.5.0 for reproducible CI
+          # version: latest                 # trustabl release to run (default: the pinned v0.1.16)
           # vuln-scan: true                 # also scan dependencies for known CVEs (OSV)
           # severity-threshold: high        # fail if any finding >= level (none|low|medium|high|critical)
           # risk-score-threshold: 70        # fail if risk (100 - readiness) >= N (0 disables)
@@ -164,7 +164,7 @@ fixes and open a fix PR on pull requests:
 | Name | Default | Description |
 |---|---|---|
 | `target` | `.` | Path or GitHub URL to scan. |
-| `version` | `latest` | trustabl release tag (e.g. `v0.5.0`) or `latest`. |
+| `version` | `v0.1.16` | trustabl release to run: an exact tag, or `latest` for the newest release at run time. See [Engine version](#engine-version). |
 | `detectors` | _(all)_ | Comma-separated SDK subset: `claude_sdk`, `openai_sdk`, `google_adk`, `openshell`, `mcp`, `langchain`, `crewai`, `pydantic_ai`, `vercel_ai`, `autogen`. |
 | `strict` | `false` | Pass `--strict` (fail on any finding). |
 | `vuln-scan` | `false` | Match dependencies against a pinned OSV snapshot; report known CVEs as findings. |
@@ -216,7 +216,7 @@ fixes and open a fix PR on pull requests:
 - **Single scan.** When the installed engine supports `--json-out`/`--sarif-out`,
   one analysis pass produces both artifacts. Older engines fall back to two scans
   automatically (and the headroom ladder is hidden, since it needs the engine's
-  `projected_scores`). Use `version: latest` to get the fast path.
+  `projected_scores`). The default engine has the fast path.
 - **Dependency CVE scan (opt-in).** With `vuln-scan: true`, declared dependencies
   are matched against a pinned OSV snapshot; each known CVE becomes a finding (so
   it counts toward the score, gate, annotations, and Security tab), plus a
@@ -243,6 +243,17 @@ After a run, open the run page and find the **`trustabl-scan-results`** artifact
 
 - Pin a release: `uses: trustabl/trustabl-action@v0.3.1`.
 - Or track the line: `uses: trustabl/trustabl-action@v0` (the moving major tag).
+
+## Engine version
+
+By default the action runs one exact trustabl engine release, `v0.1.16`, and
+checks its sha256 against that release's `checksums.txt` before running it. A
+new engine release does not change your results until the action release you use
+moves this pin; each move is a reviewed pull request in this repository.
+
+- Keep the default: set nothing.
+- Always run the newest engine: `version: latest` (the default before the pin).
+- Run a specific engine: `version: v0.1.15`.
 
 ## Notes
 

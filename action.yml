@@ -14,9 +14,12 @@ inputs:
     required: false
     default: "."
   version:
-    description: trustabl release version (e.g. v0.5.0) or 'latest'.
+    description: >-
+      trustabl release to run: an exact tag (e.g. v0.1.16), or 'latest' for the
+      newest release at run time. The default is the release this version of the
+      action is pinned to.
     required: false
-    default: latest
+    default: v0.1.16
   detectors:
     description: Comma-separated SDK detectors (claude_sdk,openai_sdk,google_adk,openshell,mcp,langchain,crewai,pydantic_ai,vercel_ai,autogen). Empty = all.
     required: false
