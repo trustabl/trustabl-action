@@ -1,0 +1,116 @@
+# Opens a pull request when the trustabl engine publishes a release newer than
+# the one this action pins as its `version` default.
+#
+# The default is pinned so an engine release cannot change users' results by
+# itself. The cost of a pin is remembering to move it; this workflow does the
+# remembering. Nothing ships until a human merges the pull request and a new
+# action release is tagged.
+#
+# Needs Settings -> Actions -> General -> "Allow GitHub Actions to create and
+# approve pull requests". Pull requests opened with GITHUB_TOKEN do not trigger
+# other workflows, so close and reopen the pull request to run CI on it.
+name: engine-bump
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'     # Mondays, 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT=$(sed -n "s/^export const DEFAULT_VERSION = '\(.*\)';$/\1/p" src/inputs.ts)
+          LATEST=$(gh api repos/trustabl/agent-reliability-analyzer/releases/latest --jq .tag_name)
+          if [ -z "$CURRENT" ] || [ -z "$LATEST" ]; then
+            echo "::error::could not read the pinned ($CURRENT) or latest ($LATEST) engine version"
+            exit 1
+          fi
+          NEWEST=$(printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | tail -n1)
+          BUMP=false
+          if [ "$CURRENT" != "$LATEST" ] && [ "$NEWEST" = "$LATEST" ]; then BUMP=true; fi
+          {
+            echo "current=$CURRENT"
+            echo "latest=$LATEST"
+            echo "bump=$BUMP"
+          } >> "$GITHUB_OUTPUT"
+          echo "Pinned $CURRENT, latest $LATEST, bump: $BUMP"
+
+      # A pin users cannot verify breaks every run that uses the default, so only
+      # propose releases whose checksums.txt covers every asset the action fetches.
+      - name: Check the release is verifiable
+        if: steps.versions.outputs.bump == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LATEST: ${{ steps.versions.outputs.latest }}
+        run: |
+          gh release download "$LATEST" -R trustabl/agent-reliability-analyzer \
+            -p checksums.txt -O "$RUNNER_TEMP/checksums.txt"
+          V="${LATEST#v}"
+          for asset in "trustabl_${V}_linux_amd64.tar.gz" "trustabl_${V}_linux_arm64.tar.gz" \
+                       "trustabl_${V}_darwin_amd64.tar.gz" "trustabl_${V}_darwin_arm64.tar.gz" \
+                       "trustabl_${V}_windows_amd64.zip"; do
+            if ! awk -v a="$asset" '$2 == a { found = 1 } END { exit !found }' "$RUNNER_TEMP/checksums.txt"; then
+              echo "::error::$asset is not listed in checksums.txt for $LATEST"
+              exit 1
+            fi
+          done
+
+      - name: Move the pin
+        if: steps.versions.outputs.bump == 'true'
+        env:
+          CURRENT: ${{ steps.versions.outputs.current }}
+          LATEST: ${{ steps.versions.outputs.latest }}
+        run: |
+          OLD=$(printf '%s' "$CURRENT" | sed 's/\./\\./g')
+          sed -i "s/${OLD}\b/${LATEST}/g" action.yml src/inputs.ts README.md
+          grep -q "DEFAULT_VERSION = '${LATEST}'" src/inputs.ts
+
+      # dist/ is what consumers run, so it has to be rebuilt from the bumped
+      # source. Typecheck and tests run here too, since CI does not run on a pull
+      # request opened by this workflow until someone reopens it.
+      - uses: actions/setup-node@v4
+        if: steps.versions.outputs.bump == 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - name: Test and rebuild dist/
+        if: steps.versions.outputs.bump == 'true'
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.versions.outputs.bump == 'true'
+        with:
+          branch: chore/engine-${{ steps.versions.outputs.latest }}
+          title: "chore: default to engine ${{ steps.versions.outputs.latest }}"
+          commit-message: "chore: default to engine ${{ steps.versions.outputs.latest }}"
+          body: |
+            The trustabl engine released `${{ steps.versions.outputs.latest }}`; this action
+            pins `${{ steps.versions.outputs.current }}` as its `version` default.
+
+            This moves the default in `action.yml`, `src/inputs.ts`, the README and the
+            rebuilt `dist/`. The release's `checksums.txt` lists every platform asset the
+            action downloads. Typecheck, unit tests and the dist build passed in the
+            workflow run that opened this pull request.
+
+            Before merging:
+            - Read the engine release notes. A release that changes scan output may need
+              action changes in the same pull request.
+            - Close and reopen this pull request so CI (Build check, Selftest) runs on it.
+              Selftest `scan-default-engine` downloads and verifies the new release.
+
+            Merging changes nothing for users until a new action release is tagged.

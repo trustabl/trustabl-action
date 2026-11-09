@@ -85044,6 +85044,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DEFAULT_VERSION = void 0;
 exports.parseSeverityThreshold = parseSeverityThreshold;
 exports.parseRiskThreshold = parseRiskThreshold;
 exports.parsePositiveInt = parsePositiveInt;
@@ -85051,6 +85052,11 @@ exports.readInputs = readInputs;
 // Action input reading + validation. The parse* helpers are pure and unit-tested;
 // readInputs() binds them to @actions/core at runtime.
 const core = __importStar(__nccwpck_require__(37484));
+// The trustabl release used when the `version` input is empty. Pinned rather
+// than 'latest' so a new engine release cannot change a pipeline's results until
+// this pin is bumped (engine-bump.yml opens that pull request). It must equal the
+// `version` default in action.yml; inputs.test.ts checks that it does.
+exports.DEFAULT_VERSION = 'v0.1.16';
 function parseSeverityThreshold(raw) {
     const v = raw.trim().toLowerCase();
     if (v === '' || v === 'none')
@@ -85085,7 +85091,7 @@ function parsePositiveInt(raw, fallback, name) {
 function readInputs() {
     const inputs = {
         target: core.getInput('target') || '.',
-        version: core.getInput('version') || 'latest',
+        version: core.getInput('version') || exports.DEFAULT_VERSION,
         detectors: core.getInput('detectors'),
         strict: core.getBooleanInput('strict'),
         vulnScan: core.getBooleanInput('vuln-scan'),
